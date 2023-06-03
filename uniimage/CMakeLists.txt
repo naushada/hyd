@@ -5,7 +5,7 @@ project(uniimage)
 #include_directories(/usr/local/include/bsoncxx/v_noabi)
 
 #Adding Complier flags
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++2a -g -Wall -Wextra")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++20 -g -Wall -Wextra")
 
 #include_directories(inc)
 
