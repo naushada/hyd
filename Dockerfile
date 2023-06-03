@@ -4,10 +4,11 @@ RUN apk add git g++ make cmake unzip libtool curl-dev automake
 
 WORKDIR /root
 
-RUN git clone -b uniimage https://github.com/naushada/hyd.git uniimage
-RUN cd uniimage && mkdir build
+RUN git clone -b uniimage https://github.com/naushada/hyd.git
+RUN cd hyd/uniimage
+RUN mkdir build
 
-WORKDIR /root/uniimage/build
+WORKDIR /root/hyd/uniimage/build
 RUN cmake .. && make
 
 WORKDIR /opt/xAPP
@@ -16,8 +17,8 @@ RUN cd uniimage
 WORKDIR /opt/xAPP/uniimage
 
 # copy from previoud build stage
-RUN cp /root/uniimage/build/uniimage .
-RUN rm -fr /root/uniimage/
+RUN cp /root/hyd/uniimage/build/uniimage .
+RUN rm -fr /root/hyd/uniimage/
 
 # CMD_ARGS --role server --server-ip <ip-address> --server-port <server-port> --web-port <web-port> --protocol tcp
 ENV ARGS="--role client --server-port 58989  --protocol tcp"
