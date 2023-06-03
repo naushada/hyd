@@ -5,6 +5,7 @@
 #include <unordered_map>
 #include <sstream>
 #include <string>
+#include <algorithm>
 
 namespace noor {
     class Http;
