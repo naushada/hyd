@@ -70,7 +70,16 @@ std::int32_t Uniimage::CreateServiceAndRegisterToEPoll(noor::ServiceType service
                 RegisterToEPoll(serviceType);
             }
             break;
-
+            case noor::ServiceType::Unix_Data_Store_Client_Service_Sync:
+            {
+                if(!m_services.insert(std::make_pair(serviceType, std::make_unique<UnixClient>())).second) {
+                    //Unable to insert the instance into container.
+                    std::cout << "line: " << __LINE__ << " element for Key: " << serviceType << " is already present" << std::endl;
+                    return(-1);
+                }
+                RegisterToEPoll(serviceType);
+            }
+            break;
             default:
             {
                 //Default case 
@@ -94,6 +103,7 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
     }
 
     std::vector<struct epoll_event> activeEvt{};
+
     while(true) {
         std::int32_t nReady = -1;
 
@@ -180,7 +190,7 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                         if(newFd > 0) {
                             std::uint16_t PORT = ntohs(add.sin_port);
                             std::string IP(inet_ntoa(addr.sin_addr));
-                            
+
                             if(!m_services.insert(std::make_pair(noor::ServiceType::Tcp_Device_Console_Connected_Service, std::make_unique<TcpClient>(newFd, IP, PORT))).second) {
                                 //Unable to insert the instance into container.
                                 std::cout << "line: " << __LINE__ << " element for Key: " << serviceType << " is already present" << std::endl;
@@ -190,13 +200,73 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                         }
                     }
                     break;
-                    
+                    case noor::ServiceType::Tcp_Device_Client_Connected_Service:
+                    {
+                        //Data is availabe for read. --- tcp_rx()
+                        std::string requesst("");
+                        auto &svc = GetSevice(serviceType);
+                        auto result = svc->tcp_rx(Fd, request);
+                    }
+                    break;
+                    case noor::ServiceType::Tcp_Web_Client_Connected_Service:
+                    {
+                        //Data is availabe for read. --- web_rx()
+                        std::string requesst("");
+                        auto &svc = GetSevice(serviceType);
+                        auto result = svc->web_rx(Fd, request);
+                    }
+                    break;
+                    case noor::ServiceType::Tcp_Device_Console_Connected_Service:
+                    {
+                        //Data is availabe for read. --- tcp_rx()
+                        std::string requesst("");
+                        auto &svc = GetSevice(serviceType);
+                        auto result = svc->tcp_rx(Fd, request);
+                    }
+                    break;
+                    case noor::ServiceType::Unix_Data_Store_Client_Service_Sync:
+                    {
+                        //Data is availabe for read. --- uds_rx()
+                        std::string requesst("");
+                        auto &svc = GetSevice(serviceType);
+                        auto result = svc->uds_rx(Fd, request);
+                    }
+                    break;
+                    case noor::ServiceType::Tcp_Device_Console_Client_Service_Async:
+                    {
+                        //Data is availabe for read. --- tcp_rx()
+                        std::string requesst("");
+                        auto &svc = GetSevice(serviceType);
+                        auto result = svc->tcp_rx(Fd, request);
+                    }
+                    break;
+                    case noor::ServiceType::Tcp_Web_Client_Proxy_Service:
+                    {
+                        //Data is availabe for read. --- tcp_rx()
+                        std::string requesst("");
+                        auto &svc = GetSevice(serviceType);
+                        auto result = svc->web_rx(Fd, request);
+                    }
+                    break;
+                    case noor::ServiceType::Tcp_Device_Client_Service_Async:
+                    {
+                        //Data is availabe for read. --- tcp_rx()
+                        std::string requesst("");
+                        auto &svc = GetSevice(serviceType);
+                        auto result = svc->tcp_rx(Fd, request);
+                    }
+                    break;
+
                     default:
                     {
 
                     }
                 }
                 
+            } else if(ent.events == EPOLLHUP)  {
+                //Connection is closed 
+            } else {
+                std::cout <<< "line: " << __LINE__ << " unhandled events " << sstd::endl;
             }
         }
     }
@@ -364,7 +434,7 @@ int main(std::int32_t argc, char *argv[]) {
     std::uint16_t PORT;
     noor::Uniimage inst;
     inst.init();
-    inst.CreateService<TcpClient>(noor::ServiceType::Tcp_Device_Client_Service_Async, IP, PORT, true);
+    inst.CreateServiceAndRegisterToEPoll<TcpClient>(noor::ServiceType::Tcp_Device_Client_Service_Async, IP, PORT, true);
 
     noor::Service unimanage;
     std::vector<std::tuple<std::unique_ptr<noor::Service>, noor::ServiceType>> ent;
