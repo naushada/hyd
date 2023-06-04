@@ -267,7 +267,7 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                 switch(serviceType) {
                     case noor::ServiceType::Tcp_Device_Client_Service_Async:
                     case noor::ServiceType::Tcp_Device_Console_Client_Service_Async:
-                    case noor::ServiceType::Tcp_Web_Client_Connected_Service:
+                    case noor::ServiceType::Tcp_Web_Client_Proxy_Service:
                     {
                         //start attempting the connection...
                         auto& inst = m_services[serviceType];
@@ -293,7 +293,7 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                     }
                 }
             } else {
-                std::cout << "line: " << __LINE__ << " unhandled events " << std::endl;
+                std::cout << "line: " << __LINE__ << " unhandled events: " << ent.events << std::endl;
             }
         }
     }
