@@ -264,6 +264,34 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                 
             } else if(ent.events == EPOLLHUP)  {
                 //Connection is closed 
+                switch(serviceType) {
+                    case noor::ServiceType::Tcp_Device_Client_Service_Async:
+                    case noor::ServiceType::Tcp_Device_Console_Client_Service_Async:
+                    case noor::ServiceType::Tcp_Web_Client_Connected_Service:
+                    {
+                        //start attempting the connection...
+                        auto& inst = m_services[serviceType];
+                        auto IP = inst->ip();
+                        auto PORT = inst->port();
+                        DeRegisterFromEPoll(Fd);
+                        CreateServiceAndRegisterToEPoll(serviceType, IP, PORT, true);
+                    }
+                    break;
+                    case noor::ServiceType::Unix_Data_Store_Client_Service_Sync:
+                    {
+                        auto& inst = m_services[serviceType];
+                        auto IP = inst->ip();
+                        auto PORT = inst->port();
+                        DeRegisterFromEPoll(Fd);
+                        CreateServiceAndRegisterToEPoll(serviceType, IP, PORT, false);
+                    }
+                    break;
+                    default:
+                    {
+                        //Connection is closed.
+                        DeRegisterFromEPoll(Fd);
+                    }
+                }
             } else {
                 std::cout << "line: " << __LINE__ << " unhandled events " << std::endl;
             }
@@ -273,8 +301,10 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
 }
 
 std::int32_t noor::Uniimage::DeRegisterFromEPoll(std::int32_t fd) {
+    noor::ServiceType serviceType;
     auto it = std::find_if(m_evts.begin(), m_evts.end(), [&](const auto& ent) ->bool {
-        auto evtFd = std::int32_t ((ent.data.u64 >> 32) & 0xFFFFFFFF); 
+        auto evtFd = std::int32_t((ent.data.u64 >> 32) & 0xFFFFFFFF);
+        serviceType = noor::ServiceType(ent.data.u64 & 0xFFFFFFFF);
         return(evtFd == fd);
     });
 
@@ -285,6 +315,8 @@ std::int32_t noor::Uniimage::DeRegisterFromEPoll(std::int32_t fd) {
 
     if(it != m_evts.end()) {
         m_evts.erase(it);
+        //Release the ownerofunique_ptr now
+        m_services[serviceType].reset(nullptr);
         return(0);
     }
 
@@ -511,6 +543,9 @@ std::int32_t noor::Service::tcp_client(const std::string& IP, std::uint16_t PORT
     memset(m_inet_server.sin_zero, 0, sizeof(m_inet_server.sin_zero));
     auto len = sizeof(m_inet_server);
     std::int32_t channel = -1;
+    //learn them for future
+    ip(IP);
+    port(PORT);
 
     if(isAsync) {
         channel = ::socket(AF_INET, SOCK_STREAM|SOCK_NONBLOCK, 0);
