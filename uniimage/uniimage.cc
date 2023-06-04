@@ -279,11 +279,8 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                     break;
                     case noor::ServiceType::Unix_Data_Store_Client_Service_Sync:
                     {
-                        auto& inst = m_services[serviceType];
-                        auto IP = inst->ip();
-                        auto PORT = inst->port();
                         DeRegisterFromEPoll(Fd);
-                        CreateServiceAndRegisterToEPoll(serviceType, IP, PORT, false);
+                        CreateServiceAndRegisterToEPoll(serviceType);
                     }
                     break;
                     default:
