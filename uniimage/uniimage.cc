@@ -131,15 +131,15 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                     case noor::ServiceType::Tcp_Web_Server_Service:
                     {
                         std::int32_t newFd = -1;
-                        struct epoll_event newEvt;
                         struct sockaddr_in addr;
                         socklen_t addr_len = sizeof(addr);
                         newFd = ::accept(Fd, (struct sockaddr *)&addr, &addr_len);
                         // new connection is accepted successfully.
 
                         if(newFd > 0) {
-                            PORT = ntohs(add.sin_port);
-                            
+                            std::uint16_t PORT = ntohs(add.sin_port);
+                            std::string IP(inet_ntoa(addr.sin_addr));
+
                             if(!m_services.insert(std::make_pair(noor::ServiceType::Tcp_Web_Client_Connected_Service , std::make_unique<TcpClient>(newFd, IP, PORT))).second) {
                                 //Unable to insert the instance into container.
                                 std::cout << "line: " << __LINE__ << " element for Key: " << serviceType << " is already present" << std::endl;
@@ -151,28 +151,42 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                     break;
                     case noor::ServiceType::Tcp_Device_Server_Service:
                     {
+                        std::int32_t newFd = -1;
+                        struct sockaddr_in addr;
+                        socklen_t addr_len = sizeof(addr);
+                        newFd = ::accept(Fd, (struct sockaddr *)&addr, &addr_len);
+                        // new connection is accepted successfully.
 
+                        if(newFd > 0) {
+                            std::uint16_t PORT = ntohs(add.sin_port);
+                            std::string IP(inet_ntoa(addr.sin_addr));
+
+                            if(!m_services.insert(std::make_pair(noor::ServiceType::Tcp_Device_Client_Connected_Service , std::make_unique<TcpClient>(newFd, IP, PORT))).second) {
+                                //Unable to insert the instance into container.
+                                std::cout << "line: " << __LINE__ << " element for Key: " << serviceType << " is already present" << std::endl;
+                                return(-1);
+                            }
+                            RegisterToEPoll(noor::ServiceType::Tcp_Device_Client_Connected_Service);
+                        }
                     }
                     break;
                     case noor::ServiceType::Tcp_Device_Console_Server_Service:
                     {
                         std::int32_t newFd = -1;
-                        struct epoll_event newEvt;
                         struct sockaddr_in addr;
                         socklen_t addr_len = sizeof(addr);
                         newFd = ::accept(Fd, (struct sockaddr *)&addr, &addr_len);
                         // new connection is accepted successfully.
                         if(newFd > 0) {
-                            newEvt.data.u64 = ent.data.u64;
-                            newEvt.events = EPOLLIN | EPOLLHUP | EPOLLERR; 
-                            auto ret = ::epoll_ctl(m_epollFd, EPOLL_CTL_ADD, newFd, &newEvt);
-
-                            if(!m_services.insert(std::make_pair(serviceType, std::make_unique<TcpClient>(newFd, IP, PORT))).second) {
+                            std::uint16_t PORT = ntohs(add.sin_port);
+                            std::string IP(inet_ntoa(addr.sin_addr));
+                            
+                            if(!m_services.insert(std::make_pair(noor::ServiceType::Tcp_Device_Console_Connected_Service, std::make_unique<TcpClient>(newFd, IP, PORT))).second) {
                                 //Unable to insert the instance into container.
                                 std::cout << "line: " << __LINE__ << " element for Key: " << serviceType << " is already present" << std::endl;
                                 return(-1);
                             }
-                            RegisterToEPoll(serviceType);
+                            RegisterToEPoll(noor::ServiceType::Tcp_Device_Console_Connected_Service);
                         }
                     }
                     break;
