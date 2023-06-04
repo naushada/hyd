@@ -119,7 +119,7 @@ namespace noor {
 }
 
 
-class Uniimage {
+class noor::Uniimage {
 
     public:
         
@@ -128,7 +128,7 @@ class Uniimage {
         std::int32_t RegisterToEPoll(noor::ServiceType serviceType);
         std::int32_t DeRegisterFromEPoll(std::int32_t fd);
         std::int32_t start(std::int32_t to);
-        std::inst32_t stop(std::int32_t in);
+        std::int32_t stop(std::int32_t in);
         std::int32_t init();
         Uniimage() : m_epollFd(), m_evts(), m_services() {}
         ~Uniimage() = default;

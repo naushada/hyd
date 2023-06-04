@@ -39,7 +39,7 @@ std::int32_t noor::Uniimage::init() {
     return(m_epollFd);
 }
 
-std::int32_t Uniimage::CreateServiceAndRegisterToEPoll(noor::ServiceType serviceType, const std::string& IP, const std::uint16_t& PORT, bool isAsync) {
+std::int32_t noor::Uniimage::CreateServiceAndRegisterToEPoll(noor::ServiceType serviceType, const std::string& IP, const std::uint16_t& PORT, bool isAsync) {
     do {
         switch(serviceType) {
 
@@ -113,8 +113,8 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
             activeEvt.resize(nReady);
         }
 
-        for_each(auto ent: activeEvt) {
-
+        for(auto it = activeEvt..begin(); it != activeEvt.end(); ++it) {
+            auto ent = *it;
             std::uint32_t Fd = reinterpret_cast<std::uint32_t>((ent.data.u64 >> 32) & 0xFFFFFFFF);
             noor::ServiceType serviceType = reinterpret_cast<noor::ServiceType>(ent.data.u64 & 0xFFFFFFFF);
 
@@ -275,7 +275,7 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
 
 std::int32_t noor::Uniimage::DeRegisterFromEPoll(std::int32_t fd) {
     auto it = std::find_if(m_evts.begin(), m_evts.end(), [&](const auto& ent) ->bool {
-        evtFd = (ent.data.u64 >> 32) & 0xFFFFFFFF; 
+        auto evtFd = (ent.data.u64 >> 32) & 0xFFFFFFFF; 
         return(evtFd == fd);
     });
 
@@ -297,10 +297,10 @@ std::int32_t noor::Uniimage::RegisterToEPoll(noor::ServiceType serviceType) {
     struct epoll_event evt;
 
     std::cout << "line: " << __LINE__ << " handle: " << inst->handle() << " serviceType: " << serviceType << std::endl;
+    std::uint64_t dd = std::uint64_t(inst->handle());
+    evt.data.u64 = std::uint64_t( dd << 32) | std::uint64_t(serviceType));
 
-    evt.data.u64 = reinterpret_cast<std::uint64_t>(inst->handle() << 32 | reinterpret_cast<std::uint32_t>(serviceType));
-
-    if((serviceType == noor::ServiceTye::Tcp_Device_Client_Service_Async) ||
+    if((serviceType == noor::ServiceType::Tcp_Device_Client_Service_Async) ||
        (serviceType == noor::ServiceType::Tcp_Device_Console_Client_Service_Async)) {
 
         evt.events = EPOLLOUT | EPOLLERR | EPOLLHUP;
@@ -318,8 +318,8 @@ std::int32_t noor::Uniimage::RegisterToEPoll(noor::ServiceType serviceType) {
     return(0);
 }
 
-std::unique_ptr<noor::Service>& Uniimage::GetService(noor::ServiceType serviceType) {
-    return(*_services[serviceType]);
+std::unique_ptr<noor::Service>& noor::Uniimage::GetService(noor::ServiceType serviceType) {
+    return(*m_services[serviceType]);
 }
 
 std::vector<struct option> options = {
