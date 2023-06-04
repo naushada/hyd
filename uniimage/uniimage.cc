@@ -113,10 +113,10 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
             activeEvt.resize(nReady);
         }
 
-        for(auto it = activeEvt..begin(); it != activeEvt.end(); ++it) {
+        for(auto it = activeEvt.begin(); it != activeEvt.end(); ++it) {
             auto ent = *it;
-            std::uint32_t Fd = reinterpret_cast<std::uint32_t>((ent.data.u64 >> 32) & 0xFFFFFFFF);
-            noor::ServiceType serviceType = reinterpret_cast<noor::ServiceType>(ent.data.u64 & 0xFFFFFFFF);
+            std::uint32_t Fd = std::uint32_t(ent.data.u64 >> 32 & 0xFFFFFFFF);
+            noor::ServiceType serviceType = noor::ServiceType(ent.data.u64 & 0xFFFFFFFF);
 
             if(ent.events == EPOLLOUT) {
                 //Descriptor is ready for Write
@@ -126,7 +126,7 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                     case noor::ServiceType::Tcp_Device_Console_Client_Service_Async:
                     {
                         ent.events = EPOLLIN | EPOLLHUP | EPOLLERR; 
-                        auto ret = ::epoll_ctl(m_epollFd, EPOLL_CTL_MOD, Fd, &ent)
+                        auto ret = ::epoll_ctl(m_epollFd, EPOLL_CTL_MOD, Fd, &ent);
                     }
                     break;
                     
@@ -136,8 +136,8 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                     }
                 }
             } else if(ent.events == EPOLLIN) {
+                //file descriptor is ready for read.
                 switch(serviceType) {
-
                     case noor::ServiceType::Tcp_Web_Server_Service:
                     {
                         std::int32_t newFd = -1;
@@ -147,7 +147,7 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                         // new connection is accepted successfully.
 
                         if(newFd > 0) {
-                            std::uint16_t PORT = ntohs(add.sin_port);
+                            std::uint16_t PORT = ntohs(addr.sin_port);
                             std::string IP(inet_ntoa(addr.sin_addr));
 
                             if(!m_services.insert(std::make_pair(noor::ServiceType::Tcp_Web_Client_Connected_Service , std::make_unique<TcpClient>(newFd, IP, PORT))).second) {
@@ -168,7 +168,7 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                         // new connection is accepted successfully.
 
                         if(newFd > 0) {
-                            std::uint16_t PORT = ntohs(add.sin_port);
+                            std::uint16_t PORT = ntohs(addr.sin_port);
                             std::string IP(inet_ntoa(addr.sin_addr));
 
                             if(!m_services.insert(std::make_pair(noor::ServiceType::Tcp_Device_Client_Connected_Service , std::make_unique<TcpClient>(newFd, IP, PORT))).second) {
@@ -188,7 +188,7 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                         newFd = ::accept(Fd, (struct sockaddr *)&addr, &addr_len);
                         // new connection is accepted successfully.
                         if(newFd > 0) {
-                            std::uint16_t PORT = ntohs(add.sin_port);
+                            std::uint16_t PORT = ntohs(addr.sin_port);
                             std::string IP(inet_ntoa(addr.sin_addr));
 
                             if(!m_services.insert(std::make_pair(noor::ServiceType::Tcp_Device_Console_Connected_Service, std::make_unique<TcpClient>(newFd, IP, PORT))).second) {
@@ -203,56 +203,56 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                     case noor::ServiceType::Tcp_Device_Client_Connected_Service:
                     {
                         //Data is availabe for read. --- tcp_rx()
-                        std::string requesst("");
-                        auto &svc = GetSevice(serviceType);
+                        std::string request("");
+                        auto &svc = GetService(serviceType);
                         auto result = svc->tcp_rx(Fd, request);
                     }
                     break;
                     case noor::ServiceType::Tcp_Web_Client_Connected_Service:
                     {
                         //Data is availabe for read. --- web_rx()
-                        std::string requesst("");
-                        auto &svc = GetSevice(serviceType);
+                        std::string request("");
+                        auto &svc = GetService(serviceType);
                         auto result = svc->web_rx(Fd, request);
                     }
                     break;
                     case noor::ServiceType::Tcp_Device_Console_Connected_Service:
                     {
                         //Data is availabe for read. --- tcp_rx()
-                        std::string requesst("");
-                        auto &svc = GetSevice(serviceType);
+                        std::string request("");
+                        auto &svc = GetService(serviceType);
                         auto result = svc->tcp_rx(Fd, request);
                     }
                     break;
                     case noor::ServiceType::Unix_Data_Store_Client_Service_Sync:
                     {
                         //Data is availabe for read. --- uds_rx()
-                        std::string requesst("");
-                        auto &svc = GetSevice(serviceType);
+                        std::string request("");
+                        auto &svc = GetService(serviceType);
                         auto result = svc->uds_rx(Fd, request);
                     }
                     break;
                     case noor::ServiceType::Tcp_Device_Console_Client_Service_Async:
                     {
                         //Data is availabe for read. --- tcp_rx()
-                        std::string requesst("");
-                        auto &svc = GetSevice(serviceType);
+                        std::string request("");
+                        auto &svc = GetService(serviceType);
                         auto result = svc->tcp_rx(Fd, request);
                     }
                     break;
                     case noor::ServiceType::Tcp_Web_Client_Proxy_Service:
                     {
                         //Data is availabe for read. --- tcp_rx()
-                        std::string requesst("");
-                        auto &svc = GetSevice(serviceType);
+                        std::string request("");
+                        auto &svc = GetService(serviceType);
                         auto result = svc->web_rx(Fd, request);
                     }
                     break;
                     case noor::ServiceType::Tcp_Device_Client_Service_Async:
                     {
                         //Data is availabe for read. --- tcp_rx()
-                        std::string requesst("");
-                        auto &svc = GetSevice(serviceType);
+                        std::string request("");
+                        auto &svc = GetService(serviceType);
                         auto result = svc->tcp_rx(Fd, request);
                     }
                     break;
@@ -266,7 +266,7 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
             } else if(ent.events == EPOLLHUP)  {
                 //Connection is closed 
             } else {
-                std::cout <<< "line: " << __LINE__ << " unhandled events " << sstd::endl;
+                std::cout << "line: " << __LINE__ << " unhandled events " << std::endl;
             }
         }
     }
@@ -298,7 +298,7 @@ std::int32_t noor::Uniimage::RegisterToEPoll(noor::ServiceType serviceType) {
 
     std::cout << "line: " << __LINE__ << " handle: " << inst->handle() << " serviceType: " << serviceType << std::endl;
     std::uint64_t dd = std::uint64_t(inst->handle());
-    evt.data.u64 = std::uint64_t( dd << 32) | std::uint64_t(serviceType));
+    evt.data.u64 = std::uint64_t( dd << 32) | std::uint64_t(serviceType);
 
     if((serviceType == noor::ServiceType::Tcp_Device_Client_Service_Async) ||
        (serviceType == noor::ServiceType::Tcp_Device_Console_Client_Service_Async)) {
@@ -623,7 +623,7 @@ std::int32_t noor::Service::uds_client(const std::string& PATH) {
     }
 
     handle(channel);
-    connected_client(noor::Service::client_connection::Disconnected);
+    connected_client(noor::client_connection::Disconnected);
     /* set the reuse address flag so we don't get errors when restarting */
     auto flag = 1;
     if(::setsockopt(channel, SOL_SOCKET, SO_REUSEADDR, (std::int8_t *)&flag, sizeof(flag)) < 0 ) {
@@ -640,7 +640,7 @@ std::int32_t noor::Service::uds_client(const std::string& PATH) {
         return(-1);
     }
 
-    connected_client(noor::Service::client_connection::Connected);
+    connected_client(noor::client_connection::Connected);
     return(0);
 }
 
@@ -710,11 +710,11 @@ noor::Service::emp noor::Service::uds_rx() {
  */
 std::int32_t noor::Service::tcp_rx(std::int32_t channel, std::string& data, service_type svcType) {
 
-    if(TCP_DS_APP_PEER_CONNECTED_SVC == svcType) {
+    if(Tcp_Device_Client_Connected_Service == svcType) {
         // Received from Datastore 
         return(tcp_rx(channel, data));
 
-    } else if(TCP_CONSOLE_APP_PEER_CONNECTED_SVC == svcType) {
+    } else if(Tcp_Device_Console_Connected_Service == svcType) {
 
         // Received the Console output
         std::array<char, 2048> payload;
@@ -1674,26 +1674,26 @@ std::int32_t noor::Service::start_client(std::uint32_t timeout_in_ms, std::vecto
         for(auto& [inst, type]: services) {
             auto channel = inst->handle();
 
-            if(channel > 0 && noor::Service::service_type::UNIX == type) {
+            if(channel > 0 && noor::ServiceType::Unix_Data_Store_Client_Service_Sync == type) {
                 FD_SET(channel, &fdList);
 
-            } else if(channel > 0 && noor::Service::service_type::TCP_WEB_PROXY_SVC == type) {
+            } else if(channel > 0 && noor::ServiceType::Tcp_Web_Client_Proxy_Service == type) {
                 FD_SET(channel, &fdList);
 
-            } else if(channel > 0 && noor::Service::service_type::TCP_DS_APP_CONSUMER_SVC_ASYNC == type) {
-                if(inst->connected_client(channel) == noor::Service::client_connection::Connected) {
+            } else if(channel > 0 && noor::ServiceType::Tcp_Device_Client_Service_Async == type) {
+                if(inst->connected_client(channel) == noor::client_connection::Connected) {
                     //std::cout << "line: " << __LINE__ << " function: " << __FUNCTION__ << " handle: " << channel << "connected " << std::endl;
                     FD_SET(channel, &fdList);
-                } else if(inst->connected_client(inst->handle()) == noor::Service::client_connection::Inprogress) {
+                } else if(inst->connected_client(inst->handle()) == noor::client_connection::Inprogress) {
                     //std::cout << "line: " << __LINE__ << " function: " << __FUNCTION__ << " handle: " << channel << "fdWrite " << std::endl;
                     FD_SET(channel, &fdWrite);
                 }
 
-            } else if(channel > 0 && noor::Service::service_type::TCP_CONSOLE_APP_CONSUMER_SVC_ASYNC == type) {
-                if(inst->connected_client(channel) == noor::Service::client_connection::Connected) {
+            } else if(channel > 0 && noor::ServiceType::Tcp_Device_Console_Client_Service_Async == type) {
+                if(inst->connected_client(channel) == noor::client_connection::Connected) {
                     //std::cout << "line: " << __LINE__ << " function: " << __FUNCTION__ << " handle: " << channel << "connected " << std::endl;
                     FD_SET(channel, &fdList);
-                } else if(inst->connected_client(inst->handle()) == noor::Service::client_connection::Inprogress) {
+                } else if(inst->connected_client(inst->handle()) == noor::client_connection::Inprogress) {
                     //std::cout << "line: " << __LINE__ << " function: " << __FUNCTION__ << " handle: " << channel << "fdWrite " << std::endl;
                     FD_SET(channel, &fdWrite);
                 }
@@ -1714,7 +1714,7 @@ std::int32_t noor::Service::start_client(std::uint32_t timeout_in_ms, std::vecto
                 //Shell command response has come pass on to web for display.
                 auto it = std::find_if(services.begin(), services.end(),[&](const auto& ent) -> bool {
                     auto &[inst, type] = ent;
-                    return(type == noor::Service::service_type::TCP_CONSOLE_APP_CONSUMER_SVC_ASYNC);
+                    return(type == noor::ServiceType::Tcp_Device_Console_Client_Service_Async);
                 });
 
                 if(it != services.end()) {
@@ -1735,7 +1735,7 @@ std::int32_t noor::Service::start_client(std::uint32_t timeout_in_ms, std::vecto
                 auto channel = inst->handle();
 
                 // Received on Unix Socket
-                if(channel > 0 && type == noor::Service::service_type::UNIX && FD_ISSET(channel, &fdList)) {
+                if(channel > 0 && type == noor::ServiceType::Unix_Data_Store_Client_Service_Sync && FD_ISSET(channel, &fdList)) {
                     //Received response from Data store
                     std::string request("");
                     std::cout << "From DS line: " << __LINE__<<" Response received " << std::endl;
@@ -1753,7 +1753,7 @@ std::int32_t noor::Service::start_client(std::uint32_t timeout_in_ms, std::vecto
                     }
                 }
 
-                if(channel > 0 && type == noor::Service::service_type::TCP_WEB_PROXY_SVC && FD_ISSET(channel, &fdList)) {
+                if(channel > 0 && type == noor::ServiceType::Tcp_Web_Client_Proxy_Service && FD_ISSET(channel, &fdList)) {
                     // send to tcp server (tcp_tx)
                     //send to DS APP Consumer 
                     std::string rsp("");
@@ -1766,7 +1766,7 @@ std::int32_t noor::Service::start_client(std::uint32_t timeout_in_ms, std::vecto
                 }
 
                 //The TCP client might be connected
-                if(channel > 0 && type == noor::Service::service_type::TCP_DS_APP_CONSUMER_SVC_ASYNC && FD_ISSET(channel, &fdWrite)) {
+                if(channel > 0 && type == noor::ServiceType::Tcp_Device_Client_Service_Async && FD_ISSET(channel, &fdWrite)) {
                     //TCP connection established successfully.
                     //Push changes if any now
                     //When the connection establishment (for non-blocking socket) encounters an error, the descriptor becomes both readable and writable (p. 530 of TCPv2).
@@ -1784,13 +1784,13 @@ std::int32_t noor::Service::start_client(std::uint32_t timeout_in_ms, std::vecto
                             inst->handle(-1);
                         } else if(!ret) {
                             //TCP Client is connected 
-                            inst->connected_client(noor::Service::client_connection::Connected);
+                            inst->connected_client(noor::client_connection::Connected);
                             FD_CLR(channel, &fdWrite);
                             FD_ZERO(&fdWrite);
                             std::cout << "line: " << __LINE__ << " async data store Connected to server handle: " << inst->handle() << std::endl;
 
                             auto it = std::find_if(services.begin(), services.end(), [&](const auto& ent) {
-                                return(noor::Service::service_type::UNIX == std::get<1>(ent));
+                                return(noor::ServiceType::Unix_Data_Store_Client_Service_Sync == std::get<1>(ent));
                             });
 
                             if(it!= services.end() && !std::get<0>(*it)->response_cache().empty()) {
@@ -1812,12 +1812,12 @@ std::int32_t noor::Service::start_client(std::uint32_t timeout_in_ms, std::vecto
                         }
                     }
                 }
-                if(channel > 0 && type == noor::Service::service_type::TCP_DS_APP_CONSUMER_SVC_ASYNC && FD_ISSET(channel, &fdList)) {
+                if(channel > 0 && type == noor::ServiceType::Tcp_Device_Client_Service_Async && FD_ISSET(channel, &fdList)) {
                     //From TCP Server
                     std::string request("");
                     auto req = inst->tcp_rx(request);
                     std::cout << "line: "<< __LINE__ << " Response received from TCP Server length:" << req << std::endl;
-                    if(!req && inst->connected_client(channel) == noor::Service::client_connection::Connected) {
+                    if(!req && inst->connected_client(channel) == noor::client_connection::Connected) {
                         ::close(channel);
                         inst->connected_client().erase(channel);
                         inst->handle(-1);
@@ -1826,7 +1826,7 @@ std::int32_t noor::Service::start_client(std::uint32_t timeout_in_ms, std::vecto
                         std::cout <<"line: " << __LINE__ << "Received from TCP server length: " << req << " command: " << request << std::endl;
                         //send to http server on device 
                         auto it = std::find_if(services.begin(), services.end(), [&](const auto &ent) {
-                            return(noor::Service::service_type::TCP_WEB_PROXY_SVC == std::get<1>(ent));
+                            return(noor::ServiceType::Tcp_Web_Client_Proxy_Service == std::get<1>(ent));
                         });
 
                         if(it != services.end()) {
@@ -1843,7 +1843,7 @@ std::int32_t noor::Service::start_client(std::uint32_t timeout_in_ms, std::vecto
                 }
 
                 //The TCP client might be connected
-                if(channel > 0 && type == noor::Service::service_type::TCP_CONSOLE_APP_CONSUMER_SVC_ASYNC && FD_ISSET(channel, &fdWrite)) {
+                if(channel > 0 && type == noor::ServiceType::Tcp_Device_Console_Client_Service_Async && FD_ISSET(channel, &fdWrite)) {
                     //TCP connection established successfully.
                     //Push changes if any now
                     //When the connection establishment (for non-blocking socket) encounters an error, the descriptor becomes both readable and writable (p. 530 of TCPv2).
@@ -1861,7 +1861,7 @@ std::int32_t noor::Service::start_client(std::uint32_t timeout_in_ms, std::vecto
                             inst->handle(-1);
                         } else if(!ret) {
                             //TCP Client is connected 
-                            inst->connected_client(noor::Service::client_connection::Connected);
+                            inst->connected_client(noor::client_connection::Connected);
                             FD_CLR(channel, &fdWrite);
                             FD_ZERO(&fdWrite);
                             std::cout << "line: " << __LINE__ << " Device Console App Connected to server handle: " << inst->handle() << std::endl;
@@ -1900,12 +1900,12 @@ std::int32_t noor::Service::start_client(std::uint32_t timeout_in_ms, std::vecto
                         }
                     }
                 }
-                if(channel > 0 && type == noor::Service::service_type::TCP_CONSOLE_APP_CONSUMER_SVC_ASYNC && FD_ISSET(channel, &fdList)) {
+                if(channel > 0 && type == noor::ServiceType::Tcp_Device_Console_Client_Service_Async && FD_ISSET(channel, &fdList)) {
                     //From TCP Server
                     std::string request("");
                     auto req = inst->tcp_rx(request);
                     std::cout << "line: "<< __LINE__ << " Response received from TCP Server length:" << req << std::endl;
-                    if(!req && inst->connected_client(channel) == noor::Service::client_connection::Connected) {
+                    if(!req && inst->connected_client(channel) == noor::client_connection::Connected) {
                         ::close(channel);
                         inst->connected_client().erase(channel);
                         inst->handle(-1);
@@ -1924,7 +1924,7 @@ std::int32_t noor::Service::start_client(std::uint32_t timeout_in_ms, std::vecto
             //time out happens
             auto it = std::find_if(services.begin(), services.end(), [&](auto& ent) {
                 auto type = std::get<1>(ent);
-                return(type == noor::Service::service_type::TCP_DS_APP_CONSUMER_SVC_ASYNC);
+                return(type == noor::ServiceType::Tcp_Device_Client_Service_Async);
             });
             if((it != services.end()) && (std::get<0>(*it)->handle() < 0) && (!std::get<0>(*it)->get_config().at("protocol").compare("tcp"))) {
                 std::get<0>(*it)->tcp_client_async(std::get<0>(*it)->get_config().at("server-ip"), std::stoi(std::get<0>(*it)->get_config().at("server-port")));
@@ -1932,7 +1932,7 @@ std::int32_t noor::Service::start_client(std::uint32_t timeout_in_ms, std::vecto
 
             it = std::find_if(services.begin(), services.end(), [&](auto& ent) {
                 auto type = std::get<1>(ent);
-                return(type == noor::Service::service_type::TCP_CONSOLE_APP_CONSUMER_SVC_ASYNC);
+                return(type == noor::ServiceType::Tcp_Device_Console_Client_Service_Async);
             });
 
             if((it != services.end()) && (std::get<0>(*it)->handle() < 0) && (!std::get<0>(*it)->get_config().at("protocol").compare("tcp"))) {
@@ -1968,17 +1968,17 @@ std::int32_t noor::Service::start_server(std::uint32_t timeout_in_ms,
         for(const auto& [inst, type]: services) {
 
             // For handling request from Web client
-            if(noor::Service::service_type::TCP_WEB_APP_PROVIDER_SVC == type && inst->handle() > 0) {
+            if(noor::ServiceType::Tcp_Web_Server_Service == type && inst->handle() > 0) {
                 FD_SET(inst->handle(), &readFd);
             }
             
             // For Receiving Data from Data store
-            if(noor::Service::service_type::TCP_DS_APP_PROVIDER_SVC == type && inst->handle() > 0) {
+            if(noor::ServiceType::Tcp_Device_Server_Service == type && inst->handle() > 0) {
                 FD_SET(inst->handle(), &readFd);
             }
 
             // For receiving console command output
-            if(noor::Service::service_type::TCP_CONSOLE_APP_PROVIDER_SVC == type && inst->handle() > 0) {
+            if(noor::ServiceType::Tcp_Device_Console_Server_Service == type && inst->handle() > 0) {
                 FD_SET(inst->handle(), &readFd);
             }
 
@@ -2006,7 +2006,7 @@ std::int32_t noor::Service::start_server(std::uint32_t timeout_in_ms,
         if(conns > 0) {
             for(const auto& [inst, type]: services) {
 
-                if(type == noor::Service::service_type::TCP_DS_APP_PROVIDER_SVC && inst->handle() > 0 && FD_ISSET(inst->handle(), &readFd)) {
+                if(type == noor::ServiceType::Tcp_Device_Server_Service && inst->handle() > 0 && FD_ISSET(inst->handle(), &readFd)) {
                     // accept a new connection 
                     struct sockaddr_in peer;
                     socklen_t peer_len = sizeof(peer);
@@ -2018,7 +2018,7 @@ std::int32_t noor::Service::start_server(std::uint32_t timeout_in_ms,
                     }
                 }
 
-                if(type == noor::Service::service_type::TCP_CONSOLE_APP_PROVIDER_SVC && inst->handle() > 0 && FD_ISSET(inst->handle(), &readFd)) {
+                if(type == noor::ServiceType::Tcp_Device_Console_Server_Service && inst->handle() > 0 && FD_ISSET(inst->handle(), &readFd)) {
                     // accept a new connection 
                     struct sockaddr_in peer;
                     socklen_t peer_len = sizeof(peer);
@@ -2030,7 +2030,7 @@ std::int32_t noor::Service::start_server(std::uint32_t timeout_in_ms,
                     }
                 }
 
-                if(type == noor::Service::service_type::TCP_WEB_APP_PROVIDER_SVC && inst->handle() > 0 && FD_ISSET(inst->handle(), &readFd)) {
+                if(type == noor::ServiceType::Tcp_Web_Server_Service && inst->handle() > 0 && FD_ISSET(inst->handle(), &readFd)) {
                     // accept a new connection 
                     struct sockaddr_in peer;
                     socklen_t peer_len = sizeof(peer);
@@ -2061,13 +2061,13 @@ std::int32_t noor::Service::start_server(std::uint32_t timeout_in_ms,
                                 //inst->tcp_connections().erase(channel);
                             } else {
                                 std::cout << "line: " << __LINE__ << " Data TCP Server Received: " << request << std::endl;
-                                if(TCP_DS_APP_PEER_CONNECTED_SVC == svc_type) {
+                                if(noor::ServiceType::Tcp_Device_Client_Connected_Service == svc_type) {
                                    noor::CommonResponse::instance().response(channel, request);
 
-                                } else if(TCP_CONSOLE_APP_PEER_CONNECTED_SVC == svc_type) {
+                                } else if(noor::ServiceType::Tcp_Device_Console_Connected_Service == svc_type) {
                                     // This response to be sent to web client
                                     auto it = std::find_if(services.begin(), services.end(), [&](auto& ent) -> bool {
-                                        return(std::get<1>(ent) == TCP_WEB_APP_PROVIDER_SVC);
+                                        return(std::get<1>(ent) == Tcp_Web_Server_Service );
                                     });
 
                                     if(it != services.end()) {
@@ -2120,13 +2120,13 @@ std::int32_t noor::Service::start_server(std::uint32_t timeout_in_ms,
                                         std::int32_t tcp_channel = -1;
 
                                         auto iter = std::find_if(services.begin(), services.end(), [&](auto& ent) {
-                                            return(std::get<1>(ent) == TCP_CONSOLE_APP_PROVIDER_SVC);
+                                            return(std::get<1>(ent) == Tcp_Device_Console_Server_Service);
                                         });
                                         
                                         if(iter != services.end()) {
                                              auto& tcpInst = *std::get<0>(*iter);
                                              auto it = std::find_if(tcpInst.tcp_connections().begin(), tcpInst.tcp_connections().end(), [&](auto& elm) -> bool {
-                                                if(std::get<3>(elm.second) == TCP_CONSOLE_APP_PEER_CONNECTED_SVC && !(std::get<1>(elm.second).compare(IP))) {
+                                                if(std::get<3>(elm.second) == Tcp_Device_Console_Connected_Service && !(std::get<1>(elm.second).compare(IP))) {
                                                     // learn the IP of web-client
                                                     std::get<4>(elm.second) = std::get<1>(value);
                                                     tcp_channel = std::get<0>(elm.second);
@@ -2169,12 +2169,12 @@ std::int32_t noor::Service::start_server(std::uint32_t timeout_in_ms,
  * @param req 
  * @return std::string 
  */
-std::string noor::Service::serialise(noor::Uniimage::EMP_COMMAND_TYPE cmd_type, noor::Uniimage::EMP_COMMAND_ID cmd, const std::string& req) {
-    cmd = (noor::Uniimage::EMP_COMMAND_ID)(((cmd_type & 0x3 ) << 12) | (cmd & 0xFFF));
+std::string noor::Service::serialise(noor::EMP_COMMAND_TYPE cmd_type, noor::EMP_COMMAND_ID cmd, const std::string& req) {
+    cmd = (noor::EMP_COMMAND_ID)(((cmd_type & 0x3 ) << 12) | (cmd & 0xFFF));
 
     std::uint32_t payload_len = req.length();
     std::cout << "Payload length: " << payload_len << " REQUEST: " << req << std::endl;
-    cmd = (noor::Uniimage::EMP_COMMAND_ID)htons(cmd);
+    cmd = (noor::EMP_COMMAND_ID)htons(cmd);
     ++m_message_id;
     auto message_id = htons(m_message_id);
     payload_len = htonl(payload_len);
@@ -2256,8 +2256,8 @@ std::string noor::Service::packArguments(const std::string& prefix, std::vector<
  * @return std::int32_t 
  */
 std::int32_t noor::Service::registerGetVariable(const std::string& prefix, std::vector<std::string> fields, std::vector<std::string> filter) {
-    noor::Uniimage::EMP_COMMAND_TYPE cmd_type = noor::Uniimage::EMP_COMMAND_TYPE::Request;
-    noor::Uniimage::EMP_COMMAND_ID cmd = noor::Uniimage::EMP_COMMAND_ID::RegisterGetVariable;
+    noor::EMP_COMMAND_TYPE cmd_type = noor::EMP_COMMAND_TYPE::Request;
+    noor::EMP_COMMAND_ID cmd = noor::EMP_COMMAND_ID::RegisterGetVariable;
     is_register_variable(true); 
     std::string rsp = packArguments(prefix, fields, filter);
     std::string data = serialise(cmd_type, cmd, rsp);
@@ -2276,8 +2276,8 @@ std::int32_t noor::Service::registerGetVariable(const std::string& prefix, std::
  * @return std::int32_t 
  */
 std::int32_t noor::Service::getSingleVariable(const std::string& prefix) {
-    noor::Uniimage::EMP_COMMAND_TYPE cmd_type = noor::Uniimage::EMP_COMMAND_TYPE::Request;
-    noor::Uniimage::EMP_COMMAND_ID cmd = noor::Uniimage::EMP_COMMAND_ID::SingleGetVariable;
+    noor::EMP_COMMAND_TYPE cmd_type = noor::EMP_COMMAND_TYPE::Request;
+    noor::EMP_COMMAND_ID cmd = noor::EMP_COMMAND_ID::SingleGetVariable;
     
     std::string rsp = packArguments(prefix);
     std::string data = serialise(cmd_type, cmd, rsp);
@@ -2297,8 +2297,8 @@ std::int32_t noor::Service::getSingleVariable(const std::string& prefix) {
  * @return std::int32_t 
  */
 std::int32_t noor::Service::getVariable(const std::string& prefix, std::vector<std::string> fields, std::vector<std::string> filter) {
-    noor::Uniimage::EMP_COMMAND_TYPE cmd_type = noor::Uniimage::EMP_COMMAND_TYPE::Request;
-    noor::Uniimage::EMP_COMMAND_ID cmd = noor::Uniimage::EMP_COMMAND_ID::GetVariable;
+    noor::EMP_COMMAND_TYPE cmd_type = noor::EMP_COMMAND_TYPE::Request;
+    noor::EMP_COMMAND_ID cmd = noor::EMP_COMMAND_ID::GetVariable;
 
     std::string rsp = packArguments(prefix, fields, filter);
     std::string data = serialise(cmd_type, cmd, rsp);
