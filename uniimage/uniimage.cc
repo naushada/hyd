@@ -227,9 +227,8 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                     case noor::ServiceType::Unix_Data_Store_Client_Service_Sync:
                     {
                         //Data is availabe for read. --- uds_rx()
-                        std::string request("");
                         auto &svc = GetService(serviceType);
-                        auto result = svc->uds_rx(Fd, request);
+                        auto result = svc->uds_rx();
                     }
                     break;
                     case noor::ServiceType::Tcp_Device_Console_Client_Service_Async:
@@ -319,7 +318,7 @@ std::int32_t noor::Uniimage::RegisterToEPoll(noor::ServiceType serviceType) {
 }
 
 std::unique_ptr<noor::Service>& noor::Uniimage::GetService(noor::ServiceType serviceType) {
-    return(*m_services[serviceType]);
+    return(m_services[serviceType]);
 }
 
 std::vector<struct option> options = {
