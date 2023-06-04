@@ -446,7 +446,9 @@ class TcpServer: public noor::Service {
                 tcp_server(sIP, std::stoi(get_config().at("server-port")));
             }
         }
-
+        TcpServer(const std::string& IP, const std::uint16_t& PORT) {
+            tcp_server(IP, PORT);
+        }
         ~TcpServer() {}
         virtual std::string onReceive(std::string in) override;
         virtual std::int32_t onClose(std::string in) override;

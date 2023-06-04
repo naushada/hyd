@@ -62,7 +62,7 @@ std::int32_t noor::Uniimage::CreateServiceAndRegisterToEPoll(noor::ServiceType s
             case noor::Tcp_Device_Console_Server_Service:
             case noor::Tcp_Web_Server_Service:
             {
-                if(!m_services.insert(std::make_pair(serviceType, std::make_unique<TcpServer>(IP, PORT, isAsync))).second) {
+                if(!m_services.insert(std::make_pair(serviceType, std::make_unique<TcpServer>(IP, PORT))).second) {
                     //Unable to insert the instance into container.
                     std::cout << "line: " << __LINE__ << " element for Key: " << serviceType << " is already present" << std::endl;
                     return(-1);
@@ -275,7 +275,7 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
 
 std::int32_t noor::Uniimage::DeRegisterFromEPoll(std::int32_t fd) {
     auto it = std::find_if(m_evts.begin(), m_evts.end(), [&](const auto& ent) ->bool {
-        auto evtFd = (ent.data.u64 >> 32) & 0xFFFFFFFF; 
+        auto evtFd = std::int32_t ((ent.data.u64 >> 32) & 0xFFFFFFFF); 
         return(evtFd == fd);
     });
 
@@ -434,7 +434,7 @@ int main(std::int32_t argc, char *argv[]) {
     std::uint16_t PORT;
     noor::Uniimage inst;
     inst.init();
-    inst.CreateServiceAndRegisterToEPoll<TcpClient>(noor::ServiceType::Tcp_Device_Client_Service_Async, IP, PORT, true);
+    inst.CreateServiceAndRegisterToEPoll(noor::ServiceType::Tcp_Device_Client_Service_Async, IP, PORT, true);
 
     noor::Service unimanage;
     std::vector<std::tuple<std::unique_ptr<noor::Service>, noor::ServiceType>> ent;
@@ -649,7 +649,7 @@ std::int32_t noor::Service::uds_client(const std::string& PATH) {
  * 
  * @return noor::Service::emp 
  */
-noor::Service::emp noor::Service::uds_rx() {
+noor::emp noor::Service::uds_rx() {
     std::uint16_t command;
     std::uint16_t message_id;
     std::uint32_t payload_size;
@@ -708,7 +708,7 @@ noor::Service::emp noor::Service::uds_rx() {
  * @param svcType 
  * @return std::int32_t 
  */
-std::int32_t noor::Service::tcp_rx(std::int32_t channel, std::string& data, service_type svcType) {
+std::int32_t noor::Service::tcp_rx(std::int32_t channel, std::string& data, noor::ServiceType svcType) {
 
     if(Tcp_Device_Client_Connected_Service == svcType) {
         // Received from Datastore 
@@ -1653,7 +1653,7 @@ std::int32_t noor::Service::tcp_tx(std::int32_t channel, const std::string& req)
  * @param intf_list 
  * @return std::int32_t 
  */
-std::int32_t noor::Service::start_client(std::uint32_t timeout_in_ms, std::vector<std::tuple<std::unique_ptr<Service>, service_type>> services) {
+std::int32_t noor::Service::start_client(std::uint32_t timeout_in_ms, std::vector<std::tuple<std::unique_ptr<noor::Service>, noor::ServiceType>> services) {
     int conns  = -1;
     fd_set fdList;
     fd_set fdWrite;
@@ -1953,7 +1953,7 @@ std::int32_t noor::Service::start_client(std::uint32_t timeout_in_ms, std::vecto
  * @return * std::int32_t 
  */
 std::int32_t noor::Service::start_server(std::uint32_t timeout_in_ms, 
-                                              std::vector<std::tuple<std::unique_ptr<noor::Service>, noor::Service::service_type>> services) {
+                                              std::vector<std::tuple<std::unique_ptr<noor::Service>, noor::ServiceType>> services) {
     int conns   = -1;
     fd_set readFd;
 
@@ -2013,7 +2013,7 @@ std::int32_t noor::Service::start_server(std::uint32_t timeout_in_ms,
                     auto newFd = ::accept(inst->handle(), (struct sockaddr *)&peer, &peer_len);
                     if(newFd > 0) {
                         std::string IP(inet_ntoa(peer.sin_addr));
-                        inst->tcp_connections().insert(std::make_pair(newFd, std::make_tuple(newFd, IP, ntohs(peer.sin_port), TCP_DS_APP_PEER_CONNECTED_SVC, "", 0, 0, 0)));
+                        inst->tcp_connections().insert(std::make_pair(newFd, std::make_tuple(newFd, IP, ntohs(peer.sin_port), Tcp_Device_Client_Connected_Service, "", 0, 0, 0)));
                         std::cout << "line: " << __LINE__ << " datastore channel: " << newFd << " IP: " << IP <<" port:" << ntohs(peer.sin_port) << std::endl;
                     }
                 }
@@ -2025,7 +2025,7 @@ std::int32_t noor::Service::start_server(std::uint32_t timeout_in_ms,
                     auto newFd = ::accept(inst->handle(), (struct sockaddr *)&peer, &peer_len);
                     if(newFd > 0) {
                         std::string IP(inet_ntoa(peer.sin_addr));
-                        inst->tcp_connections().insert(std::make_pair(newFd, std::make_tuple(newFd, IP, ntohs(peer.sin_port), TCP_CONSOLE_APP_PEER_CONNECTED_SVC, "", 0, 0, 0)));
+                        inst->tcp_connections().insert(std::make_pair(newFd, std::make_tuple(newFd, IP, ntohs(peer.sin_port), Tcp_Device_Console_Connected_Service, "", 0, 0, 0)));
                         std::cout << "line: " << __LINE__ << " console channel: " << newFd << " IP: " << IP <<" port:" << ntohs(peer.sin_port) << std::endl;
                     }
                 }
@@ -2037,7 +2037,7 @@ std::int32_t noor::Service::start_server(std::uint32_t timeout_in_ms,
                     auto newFd = ::accept(inst->handle(), (struct sockaddr *)&peer, &peer_len);
                     if(newFd > 0) {
                         std::string IP(inet_ntoa(peer.sin_addr));
-                        inst->web_connections().insert(std::make_pair(newFd, std::make_tuple(newFd, IP, ntohs(peer.sin_port), TCP_WEB_APP_PEER_CONNECTED_SVC, "", 0, 0, 0)));
+                        inst->web_connections().insert(std::make_pair(newFd, std::make_tuple(newFd, IP, ntohs(peer.sin_port), Tcp_Web_Client_Connected_Service, "", 0, 0, 0)));
                         std::cout << "line: " << __LINE__ << " web channel: " << newFd << " IP: " << IP <<" port:" << ntohs(peer.sin_port) << std::endl;
                     }
                 }
