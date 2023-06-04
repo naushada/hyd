@@ -9,13 +9,14 @@
 #include <fcntl.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
-#include <sys/types.h>
+
 #include <signal.h>
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
 #include <string.h>
+#include <sys/epoll.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/un.h>
@@ -35,280 +36,23 @@
 #include <getopt.h>
 #include <atomic>
 
-#if 0
-#include <bsoncxx/json.hpp>
-#include <bsoncxx/types.hpp>
-#include <bsoncxx/builder/stream/helpers.hpp>
-#include <bsoncxx/builder/stream/document.hpp>
-#include <bsoncxx/builder/stream/array.hpp>
-#include <bsoncxx/stdx/string_view.hpp>
-#include <bsoncxx/string/to_string.hpp>
-#endif
-
 #include "http.hpp"
 
-std::uint32_t from_json_array_to_map(const std::string json_obj, std::unordered_map<std::string, std::string>& out);
-std::uint32_t from_json_element_to_string(const std::string json_obj, const std::string key, std::string& str_out);
+
 
 namespace noor {
-    class Uniimage;
-    class NetInterface;
+
+    class Service;
     class CommonResponse;
+    class Uniimage;
 
     struct response {
         std::uint16_t type;
         std::uint16_t command;
         std::uint16_t messages_id;
     };
-};
 
-class noor::Uniimage {
-    public:
-        //EMP (Embedded Micro Protocol) parser
-        enum EMP_COMMAND_TYPE : std::uint16_t {
-           Request = 0,
-           Command_OR_Notification = 1,
-           Response = 2,
-        };
-        enum EMP_COMMAND_ID : std::uint16_t {
-           RegisterGetVariable     = 104,          /**< Register to get notified immediately and when a path or sub path changes. */
-           RegisterVariable        = 105,          /**< Register to get notified when a path or sub path changes. */
-           UnregisterVariable      = 106,          /**< Unregister a previously registered notification. */
-           NotifyVariable          = 107,          /**< Notify a change in the monitored values. */
-           ExecVariable            = 108,          /**< Execute a node. */
-           RegisterExec            = 109,          /**< Register to get notified when a path is executed. */
-           NotifyExec              = 110,          /**< Notify that a path is executed. */
-           GetVariable             = 113,          /**< Recursively get values in a single request. */
-           SingleGetVariable       = 114,          /**< Get a single path value. */
-           SetVariable             = 115,          /**< Set one or more values. */
-           ListVariable            = 116,          /**< List direct children of a branch path. */
-           NotifyFd                = 200,          /**< Notify file descriptor passing. */
-        };
-
-        struct emp_t {
-            emp_t() : m_type(0), m_command(0), m_message_id(0), m_response("") {}
-            ~emp_t() {}
-            std::uint16_t m_type;
-            std::uint16_t m_command;
-            std::uint16_t m_message_id;
-            std::string m_response;
-        };
-
-        enum client_connection: std::uint16_t {
-            Disconnected = 0,
-            Inprogress,
-            Connected
-        };
-
-        Uniimage(auto config) {
-            m_config = std::move(config);
-            tcp_client_fd(-1);
-            uds_client_fd(-1);
-            udp_client_fd(-1);
-            
-           do {
-               if(!m_config["role"].compare("server")) {
-                   //start tcp server 
-                   if(!m_config["protocol"].compare("tcp")) {
-                       tcp_server(m_config["server-ip"], std::stoi(m_config["server-port"]));
-                   }
-                   else if(!m_config["protocol"].compare("udp")) {
-                       udp_server(m_config["server-ip"], std::stoi(m_config["server-port"]));
-                   }
-                   web_server(m_config["server-ip"], std::stoi(m_config["web-port"]));
-                   break;
-               }
-               m_is_reg_ds = false;
-               std::int32_t channel = -1;
-               /* Set up the address we're going to bind to. */
-               bzero(&m_uds_server, sizeof(m_uds_server));
-               m_sock_name = "/var/run/treemgr/treemgr.sock";
-               m_uds_server.sun_family = PF_UNIX;
-               strncpy(m_uds_server.sun_path, m_sock_name.c_str(), sizeof(m_uds_server.sun_path) -1);
-               std::size_t len = sizeof(struct sockaddr_un);
-
-               channel = ::socket(PF_UNIX, SOCK_STREAM/*|SOCK_NONBLOCK*/, 0);
-               if(channel < 0) {
-                   std::cout << "line: "<<__LINE__ << "Creation of Unix socket Failed" << std::endl;
-                   break;
-               }
-
-               uds_client_fd(channel);
-               uds_client(client_connection::Disconnected);
-               /* set the reuse address flag so we don't get errors when restarting */
-               auto flag = 1;
-               if(::setsockopt(channel, SOL_SOCKET, SO_REUSEADDR, (std::int8_t *)&flag, sizeof(flag)) < 0 ) {
-                   std::cout << "line: " << __LINE__ << "Error: Could not set reuse address option on unix socket!" << std::endl;
-                   break;
-               }
-
-               auto rc = ::connect(channel, reinterpret_cast< struct sockaddr *>(&m_uds_server), len);
-               if(rc == -1) {
-                   std::cout << __FILE__ <<":"<<__LINE__ <<"Connect is failed errno: "<< std::strerror(errno) << std::endl;
-                   break;
-               }
-               uds_client(client_connection::Connected);
-               
-               if(!m_config["protocol"].compare("tcp")) {
-                    //TCP Client
-                    create_and_connect_tcp_socket(m_config["server-ip"], std::stoi(m_config["server-port"]));
-               }
-               else if(!m_config["protocol"].compare("udp")) {
-                    udp_client(m_config["server-ip"], std::stoi(m_config["server-port"]));
-               }
-           } while(0);
-        }
-
-        ~Uniimage() {
-            close(uds_client_fd());
-            close(tcp_client_fd());
-            m_ds_request_list.clear();
-            m_client_list.clear();
-            tcp_client(client_connection::Disconnected);
-            uds_client(client_connection::Disconnected);
-
-        }
-
-        emp_t uds_rx(std::int32_t channel);
-        std::string tcp_rx(std::int32_t channel);
-        std::string web_rx(std::int32_t channel);
-        
-        std::int32_t uds_tx(std::int32_t channel, const std::string& data);
-        std::int32_t tcp_tx(std::int32_t channel, const std::string& data);
-        std::int32_t web_tx(std::int32_t channel, const std::string& data);
-        std::string serialise(noor::Uniimage::EMP_COMMAND_TYPE type, noor::Uniimage::EMP_COMMAND_ID cmd, const std::string& data);
-        std::string packArguments(const std::string& prefix, std::vector<std::string> fields = {}, std::vector<std::string> filter = {});
-        std::int32_t registerGetVariable(const std::string& prefix, std::vector<std::string> fields = {}, std::vector<std::string> filter = {});
-        std::int32_t getVariable(const std::string& prefix, std::vector<std::string> fields = {}, std::vector<std::string> filter = {});
-        std::int32_t getSingleVariable(const std::string& prefix);
-        std::string build_web_response(Http& http);
-        std::int32_t create_and_connect_tcp_socket(const std::string& IP, std::uint16_t port);
-        std::int32_t udp_server(const std::string& IP, std::uint16_t port);
-        std::int32_t udp_client(const std::string& IP, std::uint16_t port);
-        std::int32_t udp_tx(std::int32_t channel, const std::string& data);
-        std::string udp_rx(std::int32_t channel);
-
-        std::int32_t udp_client_fd() const {
-            return(m_udp_client_fd);
-        }
-
-        void udp_client_fd(std::int32_t channel) {
-            m_udp_client_fd = channel;
-        }
-        
-        std::int32_t udp_server_fd() const {
-            return(m_udp_server_fd);
-        }
-
-        void udp_server_fd(std::int32_t channel) {
-            m_udp_server_fd = channel;
-        }
-
-        void uds_client_fd(std::int32_t channel) {
-            m_uds_client_fd = channel;
-        }
-
-        void tcp_client_fd(std::int32_t channel) {
-            m_tcp_client_fd = channel;
-        }
-
-        void web_server_fd(std::int32_t channel) {
-            m_web_server_fd = channel;
-        }
-        std::int32_t uds_client_fd() const {
-            return(m_uds_client_fd);
-        }
-
-        std::int32_t tcp_client_fd() const {
-            return(m_tcp_client_fd);
-        }
-        std::int32_t web_server_fd() const {
-            return(m_web_server_fd);
-        }
-
-        void tcp_server_fd(std::int32_t channel) {
-            m_tcp_server_fd = channel;
-        }
-
-        std::int32_t tcp_server_fd() const {
-            return(m_tcp_server_fd);
-        }
-
-        client_connection uds_client() {
-            return(m_client_list[uds_client_fd()]); 
-        }
-
-        void uds_client(client_connection status) {
-            m_client_list[uds_client_fd()] = status;
-        }
-
-        client_connection tcp_client() {
-            return(m_client_list[tcp_client_fd()]); 
-        }
-
-        void tcp_client(client_connection status) {
-            m_client_list[tcp_client_fd()] = status;
-        }
-        std::int32_t start_client();
-        std::int32_t start_server();
-        std::int32_t tcp_server(const std::string& IP, std::uint16_t PORT);
-        std::int32_t web_server(const std::string& IP, std::uint16_t PORT);
-        void add_element(std::uint16_t type, std::uint16_t cmd, std::uint16_t msg_id, std::string prefiex, std::string rsp="default");
-
-    private:
-        std::int32_t m_uds_client_fd;
-        std::string m_sock_name;
-        struct sockaddr_un m_uds_server;
-        std::int32_t m_tcp_client_fd;
-        std::int32_t m_tcp_server_fd;
-        std::uint16_t m_tcp_server_port;
-        struct sockaddr_in m_server_addr;
-        std::atomic<std::uint16_t> m_message_id;
-        //type, command, message_id, prefix and response for a tuple
-        std::vector<std::tuple<std::uint16_t, std::uint16_t, std::uint16_t, std::string, std::string>> m_ds_request_list;
-        std::unordered_map<std::int32_t, client_connection> m_client_list;
-        bool m_is_reg_ds;
-        //Webserver 
-        std::uint16_t m_web_server_fd;
-        std::uint16_t m_web_server_port;
-        struct sockaddr_in m_web_server;
-        //std::tuple<message_id, prefix, response>
-        std::tuple<std::uint16_t, std::string, std::string> m_ds_response;
-        std::unordered_map<std::string, std::string> m_config;
-        std::int32_t m_udp_client_fd;
-        std::int32_t m_udp_server_fd;
-        struct sockaddr_in m_self_addr;
-};
-
-class noor::CommonResponse {
-    public:
-        
-        ~CommonResponse() = default;
-
-        static noor::CommonResponse& instance() {
-            static noor::CommonResponse m_inst;
-            return(m_inst);
-        }
-
-        auto response(std::int32_t fd) {
-            return(m_responses[fd]);
-        }
-
-        void response(std::int32_t fd, std::string rsp) {
-            m_responses[fd].push_back(rsp);
-        }
-        auto& response() {
-            return(m_responses);
-        }
-
-    private:
-        CommonResponse() = default;
-        std::unordered_map<std::int32_t, std::vector<std::string>> m_responses;
-};
-
-class noor::NetInterface {
-    public:
-        //EMP (Embedded Micro Protocol) parser
+            //EMP (Embedded Micro Protocol) parser
         enum EMP_COMMAND_TYPE : std::uint16_t {
            Request = 0,
            Command_OR_Notification = 1,
@@ -353,29 +97,80 @@ class noor::NetInterface {
             RESPONSE = 4
         };
 
-        enum service_type: std::uint32_t {
-            UNIX = 0,
-
-            TCP_CONSOLE_APP_CONSUMER_SVC_ASYNC = 1,
-            TCP_DS_APP_CONSUMER_SVC_ASYNC = 2,
-
-            // TCP Server for DS
-            TCP_CONSOLE_APP_PROVIDER_SVC = 3,
-            TCP_DS_APP_PROVIDER_SVC = 4,
+        enum ServiceType: std::uint32_t {
+            // Sync --- Usages Blocking Socket
+            Unix_Data_Store_Client_Service_Sync = 1,
             
-            TCP_CONSOLE_APP_PEER_CONNECTED_SVC = 5,
-            TCP_DS_APP_PEER_CONNECTED_SVC = 6,
-            // TCP Server for Console
+            // Async --- Usages Non-Blocking Socket
+            Tcp_Device_Console_Client_Service_Async = 20,
+            Tcp_Device_Console_Client_Service_Sync,
+            Tcp_Device_Console_Server_Service,
+            Tcp_Device_Console_Connected_Service,
 
-            // Web Server
-            TCP_WEB_APP_PROVIDER_SVC = 7,
-            TCP_WEB_APP_PEER_CONNECTED_SVC = 8,
-            // Web Proxy
-            TCP_WEB_PROXY_PROVIDER_SVC = 9,
-            TCP_WEB_PROXY_SVC = 10,
+            Tcp_Web_Server_Service = 40,
+            Tcp_Web_Client_Connected_Service,
+            Tcp_Web_Client_Proxy_Service,
+
+            Tcp_Device_Server_Service = 60,
+            Tcp_Device_Client_Connected_Service,
+            Tcp_Device_Client_Service_Async,
+            Tcp_Device_Client_Service_Sync
         };
+}
 
-        NetInterface() {
+
+class Uniimage {
+
+    public:
+        
+        std::unique_ptr<noor::Service>& GetService(noor::ServiceType serviceType);
+        std::int32_t CreateServiceAndRegisterToEPoll(noor::ServiceType serviceType, const std::string& IP, const std::uint16_t& PORT, bool isAsync);
+        std::int32_t RegisterToEPoll(noor::ServiceType serviceType);
+        std::int32_t DeRegisterFromEPoll(std::int32_t fd);
+        std::int32_t start(std::int32_t to);
+        std::inst32_t stop(std::int32_t in);
+        std::int32_t init();
+        Uniimage() : m_epollFd(), m_evts(), m_services() {}
+        ~Uniimage() = default;
+
+
+    private:
+        std::int32_t m_epollFd;
+        std::vector<struct epoll_event> m_evts;
+        std::unordered_map<noor::ServiceType, std::unique_ptr<noor::Service>> m_services;
+};
+
+class noor::CommonResponse {
+    public:
+        
+        ~CommonResponse() = default;
+
+        static noor::CommonResponse& instance() {
+            static noor::CommonResponse m_inst;
+            return(m_inst);
+        }
+
+        auto response(std::int32_t fd) {
+            return(m_responses[fd]);
+        }
+
+        void response(std::int32_t fd, std::string rsp) {
+            m_responses[fd].push_back(rsp);
+        }
+        auto& response() {
+            return(m_responses);
+        }
+
+    private:
+        CommonResponse() = default;
+        std::unordered_map<std::int32_t, std::vector<std::string>> m_responses;
+};
+
+class noor::Service {
+    public:
+        
+
+        Service() {
             m_is_register_variable = false; 
             m_handle = -1; 
             m_message_id = 0; 
@@ -385,7 +180,7 @@ class noor::NetInterface {
             m_tcp_connections.clear();
 
         }
-        NetInterface(std::unordered_map<std::string, std::string> config) {
+        Service(std::unordered_map<std::string, std::string> config) {
             if(config.empty()) {
                 std::cout << "line: " << __LINE__ << " config is empty" << std::endl;
             }
@@ -398,7 +193,7 @@ class noor::NetInterface {
             m_web_connections.clear();
             m_tcp_connections.clear();
         }
-        virtual ~NetInterface() {}
+        virtual ~Service() {}
         void close();
         std::int32_t tcp_client(const std::string& IP, std::uint16_t PORT, bool isAsync=false);
         std::int32_t tcp_client_async(const std::string& IP, std::uint16_t PORT);
@@ -407,11 +202,11 @@ class noor::NetInterface {
         std::int32_t tcp_server(const std::string& IP, std::uint16_t PORT);
         std::int32_t udp_server(const std::string& IP, std::uint16_t PORT);
         std::int32_t web_server(const std::string& IP, std::uint16_t PORT);
-        std::int32_t start_client(std::uint32_t timeout_in_ms, std::vector<std::tuple<std::unique_ptr<NetInterface>, service_type>>);
-        std::int32_t start_server(std::uint32_t timeout_in_ms, std::vector<std::tuple<std::unique_ptr<NetInterface>, service_type>>);
+        std::int32_t start_client(std::uint32_t timeout_in_ms, std::vector<std::tuple<std::unique_ptr<Service>, ServiceType>>);
+        std::int32_t start_server(std::uint32_t timeout_in_ms, std::vector<std::tuple<std::unique_ptr<Service>, ServiceType>>);
         std::int32_t tcp_rx(std::string& data);
         std::int32_t tcp_rx(std::int32_t channel, std::string& data);
-        std::int32_t tcp_rx(std::int32_t channel, std::string& data, service_type svcType);
+        std::int32_t tcp_rx(std::int32_t channel, std::string& data, ServiceType svcType);
         emp uds_rx();
         std::int32_t web_rx(std::string& data);
         std::int32_t web_rx(std::int32_t fd, std::string& data);
@@ -423,7 +218,7 @@ class noor::NetInterface {
         std::int32_t uds_tx(const std::string& data);
         std::int32_t tcp_tx(const std::string& data);
         std::int32_t tcp_tx(std::int32_t channel, const std::string& data);
-        std::string serialise(noor::Uniimage::EMP_COMMAND_TYPE cmd_type, noor::Uniimage::EMP_COMMAND_ID cmd, const std::string& req);
+        std::string serialise(noor::EMP_COMMAND_TYPE cmd_type, noor::EMP_COMMAND_ID cmd, const std::string& req);
         std::string packArguments(const std::string& prefix, std::vector<std::string> fields = {}, std::vector<std::string> filter = {});
         std::int32_t registerGetVariable(const std::string& prefix, std::vector<std::string> fields = {}, std::vector<std::string> filter = {});
         std::int32_t getSingleVariable(const std::string& prefix);
@@ -569,20 +364,22 @@ class noor::NetInterface {
         std::vector<std::tuple<std::uint16_t, std::uint16_t, std::uint16_t, std::string, std::string>> m_response_cache;
         std::unordered_map<std::int32_t, client_connection> m_connected_clients;
         //key = fd, Value = <fd, IP, PORT, service_type, DestIP, RxBytes, TxBytes, timestamp>
-        std::unordered_map<std::int32_t, std::tuple<std::int32_t, std::string, std::int32_t, service_type, std::string, std::int32_t, std::int32_t, std::int32_t>> m_web_connections;
-        std::unordered_map<std::int32_t, std::tuple<std::int32_t, std::string, std::int32_t, service_type, std::string, std::int32_t, std::int32_t, std::int32_t>> m_tcp_connections;
-        std::unordered_map<std::int32_t, std::tuple<std::int32_t, std::string, std::int32_t, service_type, std::string, std::int32_t, std::int32_t, std::int32_t>> m_unix_connections;
+        std::unordered_map<std::int32_t, std::tuple<std::int32_t, std::string, std::int32_t, noor::ServiceType, std::string, std::int32_t, std::int32_t, std::int32_t>> m_web_connections;
+        std::unordered_map<std::int32_t, std::tuple<std::int32_t, std::string, std::int32_t, noor::ServiceType, std::string, std::int32_t, std::int32_t, std::int32_t>> m_tcp_connections;
+        std::unordered_map<std::int32_t, std::tuple<std::int32_t, std::string, std::int32_t, noor::ServiceType, std::string, std::int32_t, std::int32_t, std::int32_t>> m_unix_connections;
         std::unordered_map<std::string, std::string> m_config;
+        std::vector<struct epoll_event> m_epoll_evts;
+        
 
 };
 
-class TcpClient: public noor::NetInterface {
+class TcpClient: public noor::Service {
     public:
-        TcpClient(auto cfg, auto svcType): NetInterface(cfg) {
-            if(svcType == noor::NetInterface::service_type::TCP_CONSOLE_APP_CONSUMER_SVC_ASYNC) {
+        TcpClient(auto cfg, auto svcType): Service(cfg) {
+            if(svcType == noor::ServiceType::Tcp_Device_Console_Client_Service_Async) {
                 tcp_client_async(get_config().at("server-ip"), 65344);
                 std::cout << "line: " << __LINE__ << "handle: " << handle() << " console app client connection is-progress: " << connected_client(handle()) << std::endl;    
-            } if(svcType == noor::NetInterface::service_type::TCP_WEB_PROXY_SVC) {
+            } if(svcType == noor::ServiceType::Tcp_Web_Client_Proxy_Service) {
                 tcp_client("192.168.1.1", 80, false);
                 std::cout << "line: " << __LINE__ << "handle: " << handle() << " console app client connection is-progress: " << connected_client(handle()) << std::endl;    
             } else {
@@ -590,15 +387,25 @@ class TcpClient: public noor::NetInterface {
                 std::cout << "line: " << __LINE__ << "handle: " << handle() << " data store app client connection is-progress: " << connected_client(handle()) << std::endl;
             }
         }
+
+        TcpClient(const std::string& IP, const std::uint16_t& PORT, bool isAsync) {
+            tcp_client(IP, PORT, isAsync);
+        }
+
+        TcpClient(const std::int32_t& fd, const std::string& IP , const std::int32_t& PORT) {
+            handle(fd);
+            connected_client(noor::client_connection::Connected);
+        }
+
         ~TcpClient() {}
         virtual std::string onReceive(std::string in) override;
         virtual std::int32_t onClose(std::string in) override;
 };
 
 
-class UnixClient: public noor::NetInterface {
+class UnixClient: public noor::Service {
     public:
-        UnixClient(): NetInterface() {
+        UnixClient(): Service() {
             uds_client();
         }
         ~UnixClient() {
@@ -609,9 +416,9 @@ class UnixClient: public noor::NetInterface {
 };
 
 
-class UdpClient: public noor::NetInterface {
+class UdpClient: public noor::Service {
     public:
-        UdpClient(auto config): NetInterface(config) {
+        UdpClient(auto config): Service(config) {
             udp_client(get_config().at("server-ip"), std::stoi(get_config().at("server-port")));
         }
         ~UdpClient() {
@@ -622,9 +429,9 @@ class UdpClient: public noor::NetInterface {
 };
 
 
-class TcpServer: public noor::NetInterface {
+class TcpServer: public noor::Service {
     public:
-        TcpServer(auto config, auto svcType) : NetInterface(config) {
+        TcpServer(auto config, auto svcType) : Service(config) {
 
             std::string sIP("127.0.0.1");
             auto it = std::find_if(get_config().begin(), get_config().end(), [] (const auto& ent) {return(!ent.first.compare("server-ip"));});
@@ -633,7 +440,7 @@ class TcpServer: public noor::NetInterface {
                 sIP.assign(it->second);
             }
 
-            if(noor::NetInterface::service_type::TCP_CONSOLE_APP_PROVIDER_SVC == svcType) {
+            if(noor::ServiceType::Tcp_Device_Server_Service == svcType) {
                 tcp_server(sIP, 65344);    
             } else {
                 tcp_server(sIP, std::stoi(get_config().at("server-port")));
@@ -646,9 +453,9 @@ class TcpServer: public noor::NetInterface {
 };
 
 
-class UdpServer: public noor::NetInterface {
+class UdpServer: public noor::Service {
     public:
-        UdpServer(auto config) : NetInterface(config) {
+        UdpServer(auto config) : Service(config) {
             udp_server(get_config().at("server-ip"), std::stoi(get_config().at("server-port")));
         }
         ~UdpServer() {}
@@ -657,9 +464,9 @@ class UdpServer: public noor::NetInterface {
 };
 
 
-class WebServer: public noor::NetInterface {
+class WebServer: public noor::Service {
     public:
-        WebServer(auto config, service_type svcType) : NetInterface(config) {
+        WebServer(auto config, noor::ServiceType svcType) : Service(config) {
 
             std::string sIP("127.0.0.1");
             auto it = std::find_if(get_config().begin(), get_config().end(), [] (const auto& ent) {return(!ent.first.compare("server-ip"));});
@@ -667,7 +474,7 @@ class WebServer: public noor::NetInterface {
             if(it != get_config().end()) {
                 sIP.assign(it->second);
             }
-            if(svcType == noor::NetInterface::TCP_WEB_APP_PROVIDER_SVC) {
+            if(svcType == noor::ServiceType::Tcp_Web_Server_Service) {
                 web_server(sIP, std::stoi(get_config().at("web-port")));
             }
         }
@@ -678,9 +485,9 @@ class WebServer: public noor::NetInterface {
 };
 
 
-class UnixServer: public noor::NetInterface {
+class UnixServer: public noor::Service {
     public:
-        UnixServer() : NetInterface() {}
+        UnixServer() : Service() {}
         ~UnixServer() {}
         virtual std::string onReceive(std::string in) override;
         virtual std::int32_t onClose(std::string in) override;
