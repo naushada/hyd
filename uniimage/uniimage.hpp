@@ -124,7 +124,8 @@ class noor::Uniimage {
     public:
         
         std::unique_ptr<noor::Service>& GetService(noor::ServiceType serviceType);
-        std::int32_t CreateServiceAndRegisterToEPoll(noor::ServiceType serviceType, const std::string& IP, const std::uint16_t& PORT, bool isAsync);
+        //For Unix socket IP, PORT and isAsync is don't care.
+        std::int32_t CreateServiceAndRegisterToEPoll(noor::ServiceType serviceType, const std::string& IP="127.0.0.1", const std::uint16_t& PORT=65344, bool isAsync=false);
         std::int32_t RegisterToEPoll(noor::ServiceType serviceType);
         std::int32_t DeRegisterFromEPoll(std::int32_t fd);
         std::int32_t start(std::int32_t to);

@@ -461,12 +461,48 @@ int main(std::int32_t argc, char *argv[]) {
         }
     }
     
-    std::string IP;
-    std::uint16_t PORT;
+    
     noor::Uniimage inst;
-    inst.init();
-    inst.CreateServiceAndRegisterToEPoll(noor::ServiceType::Tcp_Device_Client_Service_Async, IP, PORT, true);
+    std::string bridgeIP("192.168.1.1");
+    std::uint16_t httpPort = 80;
+    std::uint16_t consolePort = 65344;
 
+    inst.init();
+
+    if(!config["role"].compare("client")) {
+        
+        inst.CreateServiceAndRegisterToEPoll(noor::ServiceType::Tcp_Device_Client_Service_Async, config["server-ip"], std::stoi(config["server-port"]), true);
+        inst.CreateServiceAndRegisterToEPoll(noor::ServiceType::Tcp_Device_Console_Client_Service_Async, config["server-ip"], consolePort, true);
+        inst.CreateServiceAndRegisterToEPoll(noor::ServiceType::Tcp_Web_Client_Proxy_Service, bridgeIP, httpPort, false);
+        inst.CreateServiceAndRegisterToEPoll(noor::ServiceType::Unix_Data_Store_Client_Service_Sync);
+
+        auto& ent = inst.GetService(noor::ServiceType::Unix_Data_Store_Client_Service_Sync);
+
+        ent->getVariable("net.interface.wifi[]", {{"radio.mode"}, {"mac"},{"ap.ssid"}}, {{"radio.mode__eq\": \"sta"}});
+        ent->getVariable("device", {{"machine"}, {"product"}, {"provisioning.serial"}});
+        ent->getVariable("net.interface.common[]", {{"ipv4.address"}, {"ipv4.connectivity"}, {"ipv4.prefixlength"}});
+        ent->getVariable("system.os", {{"version"}, {"buildnumber"}, {"name"}});
+        ent->getVariable("system.bootcheck.signature");
+
+    } else if(!config["role"].compare("server")) {
+
+        if(!config["server-ip"].length()) {
+            config["server-ip"] = "127.0.0.1";
+        }
+
+        inst.CreateServiceAndRegisterToEPoll(noor::ServiceType::Tcp_Device_Server_Service, config["server-ip"], std::stoi(config["server-port"]));
+        inst.CreateServiceAndRegisterToEPoll(noor::ServiceType::Tcp_Device_Console_Server_Service, config["server-ip"], consolePort);
+        inst.CreateServiceAndRegisterToEPoll(noor::ServiceType::Tcp_Web_Server_Service, config["server-ip"], std::stoi(config["web-port"]));
+    }
+
+    auto timeout = 100;
+    if(config["time-out"].length()) {
+        timeout = std::stoi(config["time-out"]);
+    }
+    // timeout is in milli seconds
+    inst.start(timeout);
+
+#if 0
     noor::Service unimanage;
     std::vector<std::tuple<std::unique_ptr<noor::Service>, noor::ServiceType>> ent;
     ent.clear();
@@ -520,6 +556,7 @@ int main(std::int32_t argc, char *argv[]) {
 
         unimanage.start_server(timeout, std::move(ent));
     }
+#endif
 }
 
 std::int32_t noor::Service::tcp_client_async(const std::string& IP, std::uint16_t PORT) {
