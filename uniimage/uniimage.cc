@@ -20,6 +20,8 @@
 #include "uniimage.hpp"
 #include "http.hpp"
 
+using json = nlohmann::json;
+
 /**
  * @brief 
  * 
@@ -259,7 +261,20 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                         //Data is availabe for read. --- uds_rx()
                         auto &svc = GetService(serviceType);
                         auto result = svc->uds_rx();
+                        auto json_obj = json::parse(result.m_response);
 
+                        if(!m_deviceRspCache.size()) {
+                            for(auto it = json_obj.begin(); it != json_obj.end(); ++it) {
+                                if(it->key && !it->key.compare("machine.provisioning.serial")) {
+                                    std::cout << "line: " << __LINE__ << " serialnumber: " << it->value << std::endl;
+                                    std::vector<std::string> rsp;
+                                    rsp.push_back(result.m_response);
+                                    m_deviceRspCache[it->value] = rsp;
+                                }
+                            }
+                        } else {
+                            m_deviceRspCache.begin()->second.push_back(result.m_response);
+                        }
                     }
                     break;
                     case noor::ServiceType::Tcp_Device_Console_Client_Service_Async:
