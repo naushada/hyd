@@ -131,7 +131,7 @@ class noor::Uniimage {
         std::int32_t start(std::int32_t to);
         std::int32_t stop(std::int32_t in);
         std::int32_t init();
-        Uniimage() : m_epollFd(), m_evts(), m_services() {}
+        Uniimage() : m_epollFd(), m_evts(), m_services(), m_deviceRspCache() {}
         ~Uniimage() = default;
 
 
@@ -139,6 +139,7 @@ class noor::Uniimage {
         std::int32_t m_epollFd;
         std::vector<struct epoll_event> m_evts;
         std::unordered_map<noor::ServiceType, std::unique_ptr<noor::Service>> m_services;
+        std::unordered_map<std::string, std::vector<std::string>> m_deviceRspCache;
 };
 
 class noor::CommonResponse {

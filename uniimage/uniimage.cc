@@ -20,7 +20,11 @@
 #include "uniimage.hpp"
 #include "http.hpp"
 
-        
+/**
+ * @brief 
+ * 
+ * @return std::int32_t 
+ */
 std::int32_t noor::Uniimage::init() {
     m_epollFd = ::epoll_create1(EPOLL_CLOEXEC);
     if(m_epollFd < 0) {
@@ -39,6 +43,15 @@ std::int32_t noor::Uniimage::init() {
     return(m_epollFd);
 }
 
+/**
+ * @brief 
+ * 
+ * @param serviceType 
+ * @param IP 
+ * @param PORT 
+ * @param isAsync 
+ * @return std::int32_t 
+ */
 std::int32_t noor::Uniimage::CreateServiceAndRegisterToEPoll(noor::ServiceType serviceType, const std::string& IP, const std::uint16_t& PORT, bool isAsync) {
     do {
         switch(serviceType) {
@@ -90,6 +103,22 @@ std::int32_t noor::Uniimage::CreateServiceAndRegisterToEPoll(noor::ServiceType s
     return(0);
 }
 
+/**
+ * @brief 
+ * 
+ * @param in 
+ * @return std::int32_t 
+ */
+std::int32_t noor::Uniimage::stop(std::int32_t in) {
+    return(0);
+}
+
+/**
+ * @brief 
+ * 
+ * @param toInMilliSeconds 
+ * @return std::int32_t 
+ */
 std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
 
     if(m_evts.empty()) {
@@ -140,6 +169,7 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                 switch(serviceType) {
                     case noor::ServiceType::Tcp_Web_Server_Service:
                     {
+                        //New Web Connection
                         std::int32_t newFd = -1;
                         struct sockaddr_in addr;
                         socklen_t addr_len = sizeof(addr);
@@ -229,6 +259,7 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                         //Data is availabe for read. --- uds_rx()
                         auto &svc = GetService(serviceType);
                         auto result = svc->uds_rx();
+
                     }
                     break;
                     case noor::ServiceType::Tcp_Device_Console_Client_Service_Async:
@@ -263,7 +294,7 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                 }
                 
             } else if(ent.events == EPOLLHUP)  {
-                //Connection is closed 
+                //Connection is closed by other end
                 switch(serviceType) {
                     case noor::ServiceType::Tcp_Device_Client_Service_Async:
                     case noor::ServiceType::Tcp_Device_Console_Client_Service_Async:
@@ -297,6 +328,12 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
     return(0);
 }
 
+/**
+ * @brief 
+ * 
+ * @param fd 
+ * @return std::int32_t 
+ */
 std::int32_t noor::Uniimage::DeRegisterFromEPoll(std::int32_t fd) {
     noor::ServiceType serviceType;
     auto it = std::find_if(m_evts.begin(), m_evts.end(), [&](const auto& ent) ->bool {
@@ -310,6 +347,7 @@ std::int32_t noor::Uniimage::DeRegisterFromEPoll(std::int32_t fd) {
         std::cout << "line: " << __LINE__ << " Failed to delete Fd from epoll instance for fd: " << fd << std::endl;
     }
 
+    close(fd);
     if(it != m_evts.end()) {
         m_evts.erase(it);
         //Release the ownerofunique_ptr now
@@ -320,6 +358,12 @@ std::int32_t noor::Uniimage::DeRegisterFromEPoll(std::int32_t fd) {
     return(-1);
 }
 
+/**
+ * @brief 
+ * 
+ * @param serviceType 
+ * @return std::int32_t 
+ */
 std::int32_t noor::Uniimage::RegisterToEPoll(noor::ServiceType serviceType) {
     auto &inst = GetService(serviceType);
     struct epoll_event evt;
@@ -346,6 +390,12 @@ std::int32_t noor::Uniimage::RegisterToEPoll(noor::ServiceType serviceType) {
     return(0);
 }
 
+/**
+ * @brief 
+ * 
+ * @param serviceType 
+ * @return std::unique_ptr<noor::Service>& 
+ */
 std::unique_ptr<noor::Service>& noor::Uniimage::GetService(noor::ServiceType serviceType) {
     return(m_services[serviceType]);
 }
@@ -475,8 +525,8 @@ int main(std::int32_t argc, char *argv[]) {
 
         auto& ent = inst.GetService(noor::ServiceType::Unix_Data_Store_Client_Service_Sync);
 
-        ent->getVariable("net.interface.wifi[]", {{"radio.mode"}, {"mac"},{"ap.ssid"}}, {{"radio.mode__eq\": \"sta"}});
         ent->getVariable("device", {{"machine"}, {"product"}, {"provisioning.serial"}});
+        ent->getVariable("net.interface.wifi[]", {{"radio.mode"}, {"mac"},{"ap.ssid"}}, {{"radio.mode__eq\": \"sta"}});
         ent->getVariable("net.interface.common[]", {{"ipv4.address"}, {"ipv4.connectivity"}, {"ipv4.prefixlength"}});
         ent->getVariable("system.os", {{"version"}, {"buildnumber"}, {"name"}});
         ent->getVariable("system.bootcheck.signature");
