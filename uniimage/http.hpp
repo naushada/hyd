@@ -6,6 +6,7 @@
 #include <sstream>
 #include <string>
 #include <algorithm>
+#include "json.hpp"
 
 namespace noor {
     class Http;
