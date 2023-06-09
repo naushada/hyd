@@ -133,12 +133,12 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
         toInMilliSeconds = -1;
     }
 
-    std::vector<struct epoll_event> activeEvt{};
+    std::vector<struct epoll_event> activeEvt(m_evts.size());
 
     while(true) {
         std::int32_t nReady = -1;
 
-        nReady = ::epoll_wait(m_epollFd, activeEvt.data(), m_evts.size(), toInMilliSeconds);
+        nReady = ::epoll_wait(m_epollFd, activeEvt.data(), activeEvt.size(), toInMilliSeconds);
         //Upon timeout nReady is ZERO and -1 Upon Failure.
         if(nReady >= 0) {
             activeEvt.resize(nReady);
@@ -156,8 +156,33 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                     case noor::ServiceType::Tcp_Device_Client_Service_Async:
                     case noor::ServiceType::Tcp_Device_Console_Client_Service_Async:
                     {
-                        ent.events = EPOLLIN | EPOLLHUP | EPOLLERR; 
-                        auto ret = ::epoll_ctl(m_epollFd, EPOLL_CTL_MOD, Fd, &ent);
+                        // check that there's no error for socket.
+                        std::int32_t optval = -1;
+                        socklen_t optlen = sizeof(optval);
+                        if(!getsockopt(Fd, SOL_SOCKET, SO_ERROR, &optval, &optlen)) {
+                            struct sockaddr_in peer;
+                            socklen_t sock_len = sizeof(peer);
+                            memset(&peer, 0, sizeof(peer));
+
+                            auto ret = getpeername(Fd, (struct sockaddr *)&peer, &sock_len);
+                            if(ret < 0 && errno == ENOTCONN) {
+                                //re-attemp connection now.
+                                auto& inst = GetService(serviceType);
+                                auto IP = inst->ip();
+                                auto PORT = inst->port();
+                                DeRegisterFromEPoll(Fd);
+                                CreateServiceAndRegisterToEPoll(serviceType, IP, PORT, true);
+                            } else if(!ret) {
+                                //client is connected successfully
+                                ent.events = EPOLLIN | EPOLLHUP | EPOLLERR; 
+                                auto ret = ::epoll_ctl(m_epollFd, EPOLL_CTL_MOD, Fd, &ent);
+                            }
+                        } else {
+                            //There's no error on the socket
+                            ent.events = EPOLLIN | EPOLLHUP | EPOLLERR; 
+                            auto ret = ::epoll_ctl(m_epollFd, EPOLL_CTL_MOD, Fd, &ent);
+                        }
+                        
                     }
                     break;
                     
