@@ -156,32 +156,35 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                     case noor::ServiceType::Tcp_Device_Client_Service_Async:
                     case noor::ServiceType::Tcp_Device_Console_Client_Service_Async:
                     {
-                        // check that there's no error for socket.
-                        std::int32_t optval = -1;
-                        socklen_t optlen = sizeof(optval);
-                        if(!getsockopt(Fd, SOL_SOCKET, SO_ERROR, &optval, &optlen)) {
-                            struct sockaddr_in peer;
-                            socklen_t sock_len = sizeof(peer);
-                            memset(&peer, 0, sizeof(peer));
+                        do {
+                            // check that there's no error for socket.
+                            std::int32_t optval = -1;
+                            socklen_t optlen = sizeof(optval);
+                            if(!getsockopt(Fd, SOL_SOCKET, SO_ERROR, &optval, &optlen)) {
+                                struct sockaddr_in peer;
+                                socklen_t sock_len = sizeof(peer);
+                                memset(&peer, 0, sizeof(peer));
 
-                            auto ret = getpeername(Fd, (struct sockaddr *)&peer, &sock_len);
-                            if(ret < 0 && errno == ENOTCONN) {
-                                //re-attemp connection now.
-                                auto& inst = GetService(serviceType);
-                                auto IP = inst->ip();
-                                auto PORT = inst->port();
-                                DeRegisterFromEPoll(Fd);
-                                CreateServiceAndRegisterToEPoll(serviceType, IP, PORT, true);
-                            } else if(!ret) {
-                                //client is connected successfully
-                                ent.events = EPOLLIN | EPOLLHUP | EPOLLERR; 
-                                auto ret = ::epoll_ctl(m_epollFd, EPOLL_CTL_MOD, Fd, &ent);
+                                auto ret = getpeername(Fd, (struct sockaddr *)&peer, &sock_len);
+                                if(ret < 0 && errno == ENOTCONN) {
+                                    //re-attemp connection now.
+                                    auto& inst = GetService(serviceType);
+                                    auto IP = inst->ip();
+                                    auto PORT = inst->port();
+                                    DeRegisterFromEPoll(Fd);
+                                    CreateServiceAndRegisterToEPoll(serviceType, IP, PORT, true);
+                                    break;
+                                }
                             }
-                        } else {
+
                             //There's no error on the socket
                             ent.events = EPOLLIN | EPOLLHUP | EPOLLERR; 
                             auto ret = ::epoll_ctl(m_epollFd, EPOLL_CTL_MOD, Fd, &ent);
-                        }
+                            //Send the cached response from Data Store now.
+                            auto &inst = GetService(noor::ServiceType::Unix_Data_Store_Client_Service_Sync);
+                            
+                            
+                        } while(0);
                         
                     }
                     break;
@@ -287,15 +290,24 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                         auto &svc = GetService(serviceType);
                         auto result = svc->uds_rx();
                         auto json_obj = json::parse(result.m_response);
+                        //auto json_obj = json::parse(json_arr.at(0));
+
+                        if(json_obj["machine.provisioning.serial"].get<std::string>().length()) {
+                            auto serialNo = json_obj["machine.provisioning.serial"].get<std::string>();
+                            //m_deviceRspCache[serialNo] = result.m_command;
+                        }
 
                         if(!m_deviceRspCache.size()) {
                             for(auto it = json_obj.begin(); it != json_obj.end(); ++it) {
+
+                                #if 0
                                 if(it->key && !it->key.compare("machine.provisioning.serial")) {
                                     std::cout << "line: " << __LINE__ << " serialnumber: " << it->value << std::endl;
                                     std::vector<std::string> rsp;
                                     rsp.push_back(result.m_response);
                                     m_deviceRspCache[it->value] = rsp;
                                 }
+                                #endif
                             }
                         } else {
                             m_deviceRspCache.begin()->second.push_back(result.m_response);

@@ -122,7 +122,7 @@ namespace noor {
 class noor::Uniimage {
 
     public:
-        
+
         std::unique_ptr<noor::Service>& GetService(noor::ServiceType serviceType);
         //For Unix socket IP, PORT and isAsync is don't care.
         std::int32_t CreateServiceAndRegisterToEPoll(noor::ServiceType serviceType, const std::string& IP="127.0.0.1", const std::uint16_t& PORT=65344, bool isAsync=false);
@@ -131,6 +131,11 @@ class noor::Uniimage {
         std::int32_t start(std::int32_t to);
         std::int32_t stop(std::int32_t in);
         std::int32_t init();
+
+        auto& getResponseCache() {
+            return(m_deviceRspCache);
+        }
+
         Uniimage() : m_epollFd(), m_evts(), m_services(), m_deviceRspCache() {}
         ~Uniimage() = default;
 
