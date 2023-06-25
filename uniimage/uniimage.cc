@@ -289,8 +289,8 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                         //Data is availabe for read. --- uds_rx()
                         auto &svc = GetService(serviceType);
                         auto result = svc->uds_rx();
-                        auto json_obj = json::parse(result.m_response);
-                        //auto json_obj = json::parse(json_arr.at(0));
+                        auto json_arr = json::parse(result.m_response);
+                        auto json_obj = json_arr.at(0);
 
                         if(json_obj["device.provisioning.serial"] && json_obj["device.provisioning.serial"].get<std::string>().length()) {
                             auto serialNo = json_obj["device.provisioning.serial"].get<std::string>();
@@ -845,7 +845,10 @@ noor::emp noor::Service::uds_rx() {
         message_id = ntohs(message_id);
         payload_size = ntohl(payload_size);
 
-        std::cout <<std::endl << "type: " << type << " command: " << command << " message_id: " << message_id << " payload_size: " << payload_size << std::endl;
+        std::cout << std::endl << "line: " << __LINE__ 
+                  << " type: " << type << " command: " 
+                  << command << " message_id: " << message_id 
+                  << " payload_size: " << payload_size << std::endl;
         std::uint32_t offset = 0;
         std::unique_ptr<char[]> payload = std::make_unique<char[]>(payload_size);
 
