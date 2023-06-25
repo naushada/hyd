@@ -292,7 +292,7 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                         auto json_arr = json::parse(result.m_response);
                         auto json_obj = json_arr.at(0);
                         std::cout << "line: " << __LINE__ << " object: " << json_obj << std::endl;
-                        if(json_obj["device.provisioning.serial"] && json_obj["device.provisioning.serial"].get<std::string>().length()) {
+                        if(json_obj["device.provisioning.serial"] != nullptr && json_obj["device.provisioning.serial"].get<std::string>().length()) {
                             //auto serialNo = json_obj["device.provisioning.serial"].get<std::string>();
                             auto serialNo = json_obj["device.provisioning.serial"];
                             std::cout << "line: " << __LINE__ << " serialnumber: " << serialNo << std::endl;
@@ -302,7 +302,7 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                         if(!m_deviceRspCache.size()) {
                             for(auto it = json_obj.begin(); it != json_obj.end(); ++it) {
 
-                                if(it.value().is_string() && !it.key().compare("device.provisioning.serial")) {
+                                if(!it.key().compare("device.provisioning.serial") && it.value().is_string()) {
                                     std::cout << "line: " << __LINE__ << " serialnumber: " << it.value() << std::endl;
                                     std::vector<std::string> rsp;
                                     rsp.push_back(result.m_response);
