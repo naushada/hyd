@@ -293,21 +293,22 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                         auto json_obj = json_arr.at(0);
                         std::cout << "line: " << __LINE__ << " object: " << json_obj << std::endl;
                         if(json_obj["device.provisioning.serial"] && json_obj["device.provisioning.serial"].get<std::string>().length()) {
-                            auto serialNo = json_obj["device.provisioning.serial"].get<std::string>();
-                            //m_deviceRspCache[serialNo] = result.m_command;
+                            //auto serialNo = json_obj["device.provisioning.serial"].get<std::string>();
+                            auto serialNo = json_obj["device.provisioning.serial"];
+                            std::cout << "line: " << __LINE__ << " serialnumber: " << serialNo << std::endl;
+                            //m_deviceRspCache[serialNo].push_back(std::vector(result.m_response));
                         }
 
                         if(!m_deviceRspCache.size()) {
                             for(auto it = json_obj.begin(); it != json_obj.end(); ++it) {
 
-                                #if 0
-                                if(it->key && !it->key.compare("machine.provisioning.serial")) {
-                                    std::cout << "line: " << __LINE__ << " serialnumber: " << it->value << std::endl;
+                                if(it.value().is_string() && !it.key().compare("device.provisioning.serial")) {
+                                    std::cout << "line: " << __LINE__ << " serialnumber: " << it.value() << std::endl;
                                     std::vector<std::string> rsp;
                                     rsp.push_back(result.m_response);
-                                    m_deviceRspCache[it->value] = rsp;
+                                    m_deviceRspCache[it.value()] = rsp;
                                 }
-                                #endif
+                                
                             }
                         } else {
                             m_deviceRspCache.begin()->second.push_back(result.m_response);
