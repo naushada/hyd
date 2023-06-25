@@ -291,7 +291,7 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                         auto result = svc->uds_rx();
                         auto json_arr = json::parse(result.m_response);
                         auto json_obj = json_arr.at(0);
-
+                        std::cout << "line: " << __LINE__ << " object: " << json_obj << std::endl;
                         if(json_obj["device.provisioning.serial"] && json_obj["device.provisioning.serial"].get<std::string>().length()) {
                             auto serialNo = json_obj["device.provisioning.serial"].get<std::string>();
                             //m_deviceRspCache[serialNo] = result.m_command;
