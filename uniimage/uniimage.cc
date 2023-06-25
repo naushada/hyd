@@ -292,8 +292,8 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                         auto json_obj = json::parse(result.m_response);
                         //auto json_obj = json::parse(json_arr.at(0));
 
-                        if(json_obj["machine.provisioning.serial"].get<std::string>().length()) {
-                            auto serialNo = json_obj["machine.provisioning.serial"].get<std::string>();
+                        if(json_obj["device.provisioning.serial"] && json_obj["device.provisioning.serial"].get<std::string>().length()) {
+                            auto serialNo = json_obj["device.provisioning.serial"].get<std::string>();
                             //m_deviceRspCache[serialNo] = result.m_command;
                         }
 
@@ -345,7 +345,7 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                     }
                 }
                 
-            } else if(ent.events == EPOLLHUP)  {
+            } else if(ent.events == EPOLLHUP) {
                 //Connection is closed by other end
                 switch(serviceType) {
                     case noor::ServiceType::Tcp_Device_Client_Service_Async:
@@ -372,6 +372,8 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                         DeRegisterFromEPoll(Fd);
                     }
                 }
+            } else if(ent.events == EPOLLERR) {
+                std::cout << "line: " << __LINE__ << " epollerr events: " << ent.events << std::endl;
             } else {
                 std::cout << "line: " << __LINE__ << " unhandled events: " << ent.events << std::endl;
             }
