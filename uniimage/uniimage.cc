@@ -294,13 +294,14 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                         auto result = svc->uds_rx();
                         auto json_arr = json::parse(result.m_response);
                         auto json_obj = json_arr.at(0);
+
+                        #if 0
                         std::cout << "line: " << __LINE__ << " object: " << json_obj << std::endl;
                         if(json_obj["device.provisioning.serial"] != nullptr && json_obj["device.provisioning.serial"].get<std::string>().length()) {
-                            //auto serialNo = json_obj["device.provisioning.serial"].get<std::string>();
                             auto serialNo = json_obj["device.provisioning.serial"];
                             std::cout << "line: " << __LINE__ << " serialnumber: " << serialNo << std::endl;
-                            //m_deviceRspCache[serialNo].push_back(std::vector(result.m_response));
                         }
+                        #endif
 
                         if(!m_deviceRspCache.size()) {
                             for(auto it = json_obj.begin(); it != json_obj.end(); ++it) {
