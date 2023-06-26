@@ -36,6 +36,14 @@
 #include <getopt.h>
 #include <atomic>
 
+#include <openssl/bio.h>
+#include <openssl/ssl.h>
+#include <openssl/err.h>
+#include <openssl/ossl_typ.h>
+#include <openssl/pem.h>
+#include <openssl/x509.h>
+#include <openssl/x509_vfy.h>
+
 #include "http.hpp"
 
 
@@ -45,6 +53,7 @@ namespace noor {
     class Service;
     class CommonResponse;
     class Uniimage;
+    class Tls;
 
     struct response {
         std::uint16_t type;
@@ -117,7 +126,9 @@ namespace noor {
             Tcp_Device_Client_Service_Sync,
 
             Tcp_Device_Rest_Client_Service_Async,
-            Tcp_Device_Rest_Client_Service_Sync
+            Tls_Tcp_Device_Rest_Client_Service_Async,
+            Tcp_Device_Rest_Client_Service_Sync,
+            Tls_Tcp_Device_Rest_Client_Service_Sync,
         };
 }
 
@@ -174,6 +185,31 @@ class noor::CommonResponse {
     private:
         CommonResponse() = default;
         std::unordered_map<std::int32_t, std::vector<std::string>> m_responses;
+};
+
+class noor::Tls {
+    public:
+        Tls() {
+            OpenSSL_add_all_algorithms();
+            SSL_load_error_strings();
+            //m_method = std::make_unique<const SSL_METHOD>(SSLv23_client_method());
+            m_method = SSLv23_client_method();
+            m_ssl_ctx = std::make_unique<SSL_CTX_new, decltype(&SSL_free)>(SSL_CTX_new(m_method), SSL_CTX_free);
+            m_ssl = std::make_unique<SSL_new, decltype(&SSL_free)>(SSL_new(m_ssl_ctx.get()), SSL_free);
+        }
+        ~Tls() = default;
+        std::int32_t init() {
+
+        }
+
+        std::int32_t start() {
+
+        }
+    private:
+        //std::unique_ptr<const SSL_METHOD> m_method;
+        const SSL_METHOD *m_method;
+        std::unique_ptr<SSL_CTX, decltype(&SSL_CTX_free)> m_ssl_ctx;
+        std::unique_ptr<SSL, decltype(&SSL_free)> m_ssl;
 };
 
 class noor::Service {
