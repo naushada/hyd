@@ -142,6 +142,9 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
         //Upon timeout nReady is ZERO and -1 Upon Failure.
         if(nReady >= 0) {
             activeEvt.resize(nReady);
+        } else if(nReady < 0) {
+            //Error is returned by epoll_wait
+            continue;
         }
 
         for(auto it = activeEvt.begin(); it != activeEvt.end(); ++it) {
