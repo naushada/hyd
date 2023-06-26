@@ -315,6 +315,9 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                             }
                         } else {
                             m_deviceRspCache.begin()->second.push_back(result.m_response);
+                            for(const auto&ent: m_deviceRspCache.begin()->second) {
+                                std::cout << "line: " << __LINE__ << " m_devideRspCache: " << ent <<std::endl;
+                            }
                         }
                     }
                     break;
