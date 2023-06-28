@@ -464,6 +464,10 @@ class noor::Service {
             return(m_message_id);
         }
 
+        Tls& tls() {
+            return(m_tls);
+        } 
+
     private:
         std::atomic<std::uint16_t> m_message_id;
         bool m_is_register_variable;
@@ -486,6 +490,7 @@ class noor::Service {
         std::unordered_map<std::int32_t, std::tuple<std::int32_t, std::string, std::int32_t, noor::ServiceType, std::string, std::int32_t, std::int32_t, std::int32_t>> m_unix_connections;
         std::unordered_map<std::string, std::string> m_config;
         std::vector<struct epoll_event> m_epoll_evts;
+        noor::Tls m_tls;
 };
 
 class TcpClient: public noor::Service {
@@ -493,11 +498,23 @@ class TcpClient: public noor::Service {
         TcpClient(auto cfg, auto svcType): Service(cfg) {
             if(svcType == noor::ServiceType::Tcp_Device_Console_Client_Service_Async) {
                 tcp_client_async(get_config().at("server-ip"), 65344);
-                std::cout << "line: " << __LINE__ << "handle: " << handle() << " console app client connection is-progress: " << connected_client(handle()) << std::endl;    
+                std::cout << "line: " << __LINE__ << "handle: " << handle() << " console app client connection is-progress: " << connected_client(handle()) << std::endl;
+
             } if(svcType == noor::ServiceType::Tcp_Web_Client_Proxy_Service) {
                 tcp_client("192.168.1.1", 80, false);
-                std::cout << "line: " << __LINE__ << "handle: " << handle() << " console app client connection is-progress: " << connected_client(handle()) << std::endl;    
-            } else {
+                std::cout << "line: " << __LINE__ << "handle: " << handle() << " console app client connection is-progress: " << connected_client(handle()) << std::endl;
+
+            } else if(svcType == noor::ServiceType::Tls_Tcp_Device_Rest_Client_Service_Sync) {
+                tcp_client("192.168.1.1", 443, false);
+
+                if(connected_client(handle()) == noor::client_connection::Connected) {
+                    tls().init(handle());
+                    tls().client();
+                }
+
+                std::cout << "line: " << __LINE__ << "handle: " << handle() << " TLS Client Sync: " << connected_client(handle()) << std::endl;
+
+            }  else {
                 tcp_client_async(get_config().at("server-ip"), std::stoi(get_config().at("server-port")));
                 std::cout << "line: " << __LINE__ << "handle: " << handle() << " data store app client connection is-progress: " << connected_client(handle()) << std::endl;
             }

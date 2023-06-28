@@ -63,6 +63,7 @@ std::int32_t noor::Uniimage::CreateServiceAndRegisterToEPoll(noor::ServiceType s
             case noor::Tcp_Device_Console_Client_Service_Async:
             case noor::Tcp_Device_Console_Client_Service_Sync:
             case noor::Tcp_Web_Client_Proxy_Service:
+            case noor::Tls_Tcp_Device_Rest_Client_Service_Sync:
             {
                 if(!m_services.insert(std::make_pair(serviceType, std::make_unique<TcpClient>(IP, PORT, isAsync))).second) {
                     //Unable to insert the instance into container.
@@ -442,7 +443,8 @@ std::int32_t noor::Uniimage::RegisterToEPoll(noor::ServiceType serviceType) {
     evt.data.u64 = std::uint64_t( dd << 32) | std::uint64_t(serviceType);
 
     if((serviceType == noor::ServiceType::Tcp_Device_Client_Service_Async) ||
-       (serviceType == noor::ServiceType::Tcp_Device_Console_Client_Service_Async)) {
+       (serviceType == noor::ServiceType::Tcp_Device_Console_Client_Service_Async) ||
+       (serviceType == noor::ServiceType::Tls_Tcp_Device_Rest_Client_Service_Sync)) {
 
         evt.events = EPOLLOUT | EPOLLERR | EPOLLHUP;
     } else {
@@ -581,6 +583,7 @@ int main(std::int32_t argc, char *argv[]) {
     noor::Uniimage inst;
     std::string bridgeIP("192.168.1.1");
     std::uint16_t httpPort = 80;
+    std::uint16_t httpsPort = 443;
     std::uint16_t consolePort = 65344;
 
     inst.init();
@@ -589,7 +592,8 @@ int main(std::int32_t argc, char *argv[]) {
         
         inst.CreateServiceAndRegisterToEPoll(noor::ServiceType::Tcp_Device_Client_Service_Async, config["server-ip"], std::stoi(config["server-port"]), true);
         inst.CreateServiceAndRegisterToEPoll(noor::ServiceType::Tcp_Device_Console_Client_Service_Async, config["server-ip"], consolePort, true);
-        inst.CreateServiceAndRegisterToEPoll(noor::ServiceType::Tcp_Web_Client_Proxy_Service, bridgeIP, httpPort, false);
+        //inst.CreateServiceAndRegisterToEPoll(noor::ServiceType::Tcp_Web_Client_Proxy_Service, bridgeIP, httpPort, false);
+        inst.CreateServiceAndRegisterToEPoll(noor::ServiceType::Tls_Tcp_Device_Rest_Client_Service_Sync, bridgeIP, httpsPort, false);
         inst.CreateServiceAndRegisterToEPoll(noor::ServiceType::Unix_Data_Store_Client_Service_Sync);
 
         auto& ent = inst.GetService(noor::ServiceType::Unix_Data_Store_Client_Service_Sync);
