@@ -189,13 +189,15 @@ class noor::CommonResponse {
 
 class noor::Tls {
     public:
-        Tls() {
+        Tls(): m_method(SSLv23_client_method()), m_ssl_ctx(SSL_CTX_new(m_method), SSL_CTX_free), m_ssl(SSL_new(m_ssl_ctx.get()), SSL_free) {
             OpenSSL_add_all_algorithms();
             SSL_load_error_strings();
             //m_method = std::make_unique<const SSL_METHOD>(SSLv23_client_method());
+            #if 0
             m_method = SSLv23_client_method();
             m_ssl_ctx = std::make_unique<SSL_CTX_new, decltype(&SSL_free)>(SSL_CTX_new(m_method), SSL_CTX_free);
             m_ssl = std::make_unique<SSL_new, decltype(&SSL_free)>(SSL_new(m_ssl_ctx.get()), SSL_free);
+            #endif
         }
         ~Tls() = default;
         std::int32_t init() {
