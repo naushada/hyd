@@ -190,6 +190,7 @@ class noor::CommonResponse {
 class noor::Tls {
     public:
         Tls(): m_method(SSLv23_client_method()), m_ssl_ctx(SSL_CTX_new(m_method), SSL_CTX_free), m_ssl(SSL_new(m_ssl_ctx.get()), SSL_free) {
+
             OpenSSL_add_all_algorithms();
             SSL_load_error_strings();
             //m_method = std::make_unique<const SSL_METHOD>(SSLv23_client_method());
@@ -198,15 +199,79 @@ class noor::Tls {
             m_ssl_ctx = std::make_unique<SSL_CTX_new, decltype(&SSL_free)>(SSL_CTX_new(m_method), SSL_CTX_free);
             m_ssl = std::make_unique<SSL_new, decltype(&SSL_free)>(SSL_new(m_ssl_ctx.get()), SSL_free);
             #endif
+            /* ---------------------------------------------------------- *
+             * Disabling SSLv2 will leave v3 and TSLv1 for negotiation    *
+             * ---------------------------------------------------------- */
+            SSL_CTX_set_options(m_ssl_ctx.get(), SSL_OP_NO_SSLv2);
         }
+
         ~Tls() = default;
-        std::int32_t init() {
 
+        std::int32_t init(std::int32_t fd) {
+            std::int32_t rc = SSL_set_fd(m_ssl.get(), fd);
+            return(rc);
         }
 
-        std::int32_t start() {
-
+        std::int32_t client() {
+            std::int32_t rc = SSL_connect(m_ssl.get());
+            return(rc);
         }
+
+        std::int32_t server() {
+            std::int32_t rc = -1;
+
+            return(rc);
+        }
+
+        std::int32_t peek(std::string& out, std::uint32_t len = 2048) {
+            int rc = -1;
+            rc = SSL_peek(m_ssl.get(), out.data(), len);
+
+            if(rc > 0) {
+                out.resize(rc);
+            }
+            return(rc);
+
+        }/*peek*/
+
+        std::int32_t read(std::string& out, std::uint32_t len = 2048) {
+            std::int32_t rc = -1;
+            rc = SSL_read(m_ssl.get(), out.data(), len);
+
+            if(rc > 0) {
+                out.resize(rc);
+            }
+            return(rc);
+
+        }/*read*/
+
+        std::int32_t write(const std::string& out) {
+            std::int32_t rc = -1;
+            size_t offset = 0;
+            auto len = out.length();
+
+            do {
+                rc = SSL_write(m_ssl.get(), out.data() + offset, len - offset);
+
+                if(rc < 0) {
+                    break;
+                }
+
+                offset += rc;
+            } while(len != offset);
+
+            return(offset);
+
+        }/*write*/
+
+        auto& ssl_ctx() {
+            return(*(m_ssl_ctx.get()));
+        }
+
+        auto& ssl() {
+            return(*(m_ssl.get()));
+        }
+
     private:
         //std::unique_ptr<const SSL_METHOD> m_method;
         const SSL_METHOD *m_method;
@@ -216,7 +281,6 @@ class noor::Tls {
 
 class noor::Service {
     public:
-        
 
         Service() {
             m_is_register_variable = false; 
@@ -241,6 +305,7 @@ class noor::Service {
             m_web_connections.clear();
             m_tcp_connections.clear();
         }
+
         virtual ~Service() {}
         void close();
         std::int32_t tcp_client(const std::string& IP, std::uint16_t PORT, bool isAsync=false);
@@ -290,19 +355,22 @@ class noor::Service {
             return(-1);
         }
 
-
         void ip(std::string IP) {
             m_ip = IP;
         }
+
         std::string ip() const {
             return(m_ip);
         }
+
         void port(std::uint16_t _p) {
             m_port = _p;
         }
+
         std::uint16_t port() const {
           return(m_port);
         }
+
         std::int32_t handle() const {
             return(m_handle);
         }
@@ -322,6 +390,7 @@ class noor::Service {
         auto& response_cache() {
             return(m_response_cache);
         }
+
         void add_element_to_cache(std::tuple<std::uint16_t, std::uint16_t, std::uint16_t, std::string, std::string> elm) {
             m_response_cache.push_back(elm);
         }
@@ -417,8 +486,6 @@ class noor::Service {
         std::unordered_map<std::int32_t, std::tuple<std::int32_t, std::string, std::int32_t, noor::ServiceType, std::string, std::int32_t, std::int32_t, std::int32_t>> m_unix_connections;
         std::unordered_map<std::string, std::string> m_config;
         std::vector<struct epoll_event> m_epoll_evts;
-        
-
 };
 
 class TcpClient: public noor::Service {

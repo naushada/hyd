@@ -347,6 +347,13 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                     }
                     break;
 
+                    case noor::ServiceType::Tls_Tcp_Device_Rest_Client_Service_Sync:
+                    {
+                        auto &svc = GetService(serviceType);
+                        //auto result = svc->tcp_rx(Fd, request);
+                    }
+                    break;
+
                     default:
                     {
 
