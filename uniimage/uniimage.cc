@@ -308,7 +308,6 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
 
                         if(!m_deviceRspCache.size()) {
                             for(auto it = json_obj.begin(); it != json_obj.end(); ++it) {
-
                                 if(!it.key().compare("device.provisioning.serial") && it.value().is_string()) {
                                     std::cout << "line: " << __LINE__ << " serialnumber: " << it.value() << std::endl;
                                     std::vector<std::string> rsp;
@@ -320,7 +319,7 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                             m_deviceRspCache.begin()->second.push_back(result.m_response);
                             std::cout << "line: " << __LINE__ << " number of elements: " << m_deviceRspCache.begin()->second.size() << std::endl;
                             for(const auto&ent: m_deviceRspCache.begin()->second) {
-                                //std::cout << "line: " << __LINE__ << " m_devideRspCache: " << ent <<std::endl;
+                                std::cout << "line: " << __LINE__ << " m_devideRspCache: " << ent <<std::endl;
                             }
                             if(5 == m_deviceRspCache.begin()->second.size()) {
                                 auto &svc = GetService(noor::ServiceType::Tcp_Device_Client_Service_Async);
