@@ -126,7 +126,7 @@ namespace noor {
             Tcp_Device_Client_Service_Async,
             Tcp_Device_Client_Service_Sync,
 
-            Tcp_Device_Rest_Client_Service_Async,
+            Tcp_Device_Rest_Client_Service_Async = 80,
             Tls_Tcp_Device_Rest_Client_Service_Async,
             Tcp_Device_Rest_Client_Service_Sync,
             Tls_Tcp_Device_Rest_Client_Service_Sync,

@@ -155,6 +155,7 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
 
             if(ent.events == EPOLLOUT) {
                 //Descriptor is ready for Write
+                std::cout << "line: " << __LINE__ << " EPOLLOUT is set for serviceType: " << serviceType << std::endl;
                 switch(serviceType) {
                     case noor::ServiceType::Tcp_Device_Client_Service_Async:
                     {
