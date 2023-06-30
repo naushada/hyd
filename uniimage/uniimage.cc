@@ -307,6 +307,12 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                         std::string request("");
                         auto &svc = GetService(serviceType);
                         auto result = svc->tcp_rx(Fd, request);
+                        if(!result) {
+                            //TCP Connection is closed.
+                            DeRegisterFromEPoll(Fd);
+                            //Initiate the connection now.
+                            CreateServiceAndRegisterToEPoll(serviceType);
+                        }
                     }
                     break;
                     case noor::ServiceType::Tcp_Web_Client_Connected_Service:
