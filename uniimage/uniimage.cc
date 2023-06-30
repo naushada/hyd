@@ -666,6 +666,7 @@ int main(std::int32_t argc, char *argv[]) {
             {"net.interface.common[].ipv4.prefixlength"}};
         ent->getVariable(dp_list);
         #endif
+        //GetToken for RestClient and then Authorize the the token
 
     } else if(!config["role"].compare("server")) {
 

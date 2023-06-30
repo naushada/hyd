@@ -54,6 +54,7 @@ namespace noor {
     class CommonResponse;
     class Uniimage;
     class Tls;
+    class  RestClient;
 
     struct response {
         std::uint16_t type;
@@ -152,7 +153,6 @@ class noor::Uniimage {
 
         Uniimage() : m_epollFd(), m_evts(), m_services(), m_deviceRspCache() {}
         ~Uniimage() = default;
-
 
     private:
         std::int32_t m_epollFd;
@@ -277,6 +277,17 @@ class noor::Tls {
         const SSL_METHOD *m_method;
         std::unique_ptr<SSL_CTX, decltype(&SSL_CTX_free)> m_ssl_ctx;
         std::unique_ptr<SSL, decltype(&SSL_free)> m_ssl;
+};
+
+class noor::RestClient {
+    public:
+        RestClient() {}
+        ~RestClient() {}
+        std::string getToken(const std::string& in) {}
+        std::string authorizeToken(const std::string& in) {}
+        std::string buildRequest(const std::string& in, std::vector<std::string> param = {}) {}
+    private:
+        std::string cookies;
 };
 
 class noor::Service {
@@ -466,7 +477,11 @@ class noor::Service {
 
         Tls& tls() {
             return(m_tls);
-        } 
+        }
+
+        RestClient& restC() {
+            return(m_restC);
+        }
 
     private:
         std::atomic<std::uint16_t> m_message_id;
@@ -491,6 +506,7 @@ class noor::Service {
         std::unordered_map<std::string, std::string> m_config;
         std::vector<struct epoll_event> m_epoll_evts;
         noor::Tls m_tls;
+        noor::RestClient m_restC;
 };
 
 class TcpClient: public noor::Service {
