@@ -278,6 +278,8 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                         std::string request("");
                         auto &svc = GetService(serviceType);
                         auto result = svc->web_rx(Fd, request);
+                        auto rsp = svc->process_web_request(request);
+                        auto ret = svc->web_tx(Fd, rsp);
                     }
                     break;
                     case noor::ServiceType::Tcp_Device_Console_Connected_Service:
@@ -313,10 +315,10 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                                     rsp.push_back(result.m_response);
                                     m_deviceRspCache[it.value()] = rsp;
                                 }
-                                
                             }
                         } else {
                             m_deviceRspCache.begin()->second.push_back(result.m_response);
+                            std::cout << "line: " << __LINE__ << " number of elements: " << m_deviceRspCache.begin()->second.size() << std::endl;
                             for(const auto&ent: m_deviceRspCache.begin()->second) {
                                 //std::cout << "line: " << __LINE__ << " m_devideRspCache: " << ent <<std::endl;
                             }
@@ -352,6 +354,12 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                     {
                         auto &svc = GetService(serviceType);
                         //auto result = svc->tcp_rx(Fd, request);
+                        std::string out("");
+                        svc->tls().read(out);
+
+                        if(out.length()) {
+                            std::cout << "line: " << __LINE__ << " tls_read: " << out << std::endl;
+                        }
                     }
                     break;
 
@@ -603,6 +611,21 @@ int main(std::int32_t argc, char *argv[]) {
         ent->getVariable("net.interface.common[]", {{"ipv4.address"}, {"ipv4.connectivity"}, {"ipv4.prefixlength"}});
         ent->getVariable("system.os", {{"version"}, {"buildnumber"}, {"name"}});
         ent->getVariable("system.bootcheck.signature");
+        #if 0
+        std::vector<const std::string> dp_list = {
+            {"device.machine"},
+            {"device.product"},
+            {"device.provisioning.serial"},
+            {"system.os.version"},
+            {"system.os.buildnumber"},
+            {"system.os.name"},
+            {"system.bootcheck.signature"},
+            {"net.interface.wifi[]"},
+            {"net.interface.common[].ipv4.address"},
+            {"net.interface.common[].ipv4.connectivity"},
+            {"net.interface.common[].ipv4.prefixlength"}};
+        ent->getVariable(dp_list);
+        #endif
 
     } else if(!config["role"].compare("server")) {
 
