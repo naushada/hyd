@@ -185,8 +185,13 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                             ent.events = EPOLLIN | EPOLLHUP | EPOLLERR; 
                             auto ret = ::epoll_ctl(m_epollFd, EPOLL_CTL_MOD, Fd, &ent);
                             //Send the cached response from Data Store now.
-                            auto &inst = GetService(noor::ServiceType::Unix_Data_Store_Client_Service_Sync);
-                            
+                            auto &svc = GetService(noor::ServiceType::Unix_Data_Store_Client_Service_Sync);
+                            if(!getResponseCache().empty()) {
+                                for(const auto& ent: getResponseCache().begin()->second) {
+                                    std::cout << "line: " << __LINE__ << " from cache: " << ent << std::endl;
+                                }
+                                //svc->tcp_tx(Fd, getResponseCache().begin()->second);
+                            }
                             
                         } while(0);
                         
