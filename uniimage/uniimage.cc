@@ -800,7 +800,7 @@ std::int32_t noor::Service::tcp_client(const std::string& IP, std::uint16_t PORT
     if(rc < 0) {
         if(errno == EINPROGRESS) {    
             connected_client(noor::client_connection::Inprogress);
-            std::cout << "line: " << __LINE__ << "Async connection in progress IP: " << IP << " PORT: " << PORT << std::endl;
+            std::cout << "line: " << __LINE__ << " Async connection in progress IP: " << IP << " PORT: " << PORT << std::endl;
             return(0);
 
         } else if(errno == ECONNREFUSED) {
@@ -820,7 +820,7 @@ std::int32_t noor::Service::tcp_client(const std::string& IP, std::uint16_t PORT
         }
     } else {
         connected_client(noor::client_connection::Connected);
-        std::cout << "line: " << __LINE__ << "client is connected IP: " << IP << " PORT: " << PORT << std::endl;
+        std::cout << "line: " << __LINE__ << " client is connected IP: " << IP << " PORT: " << PORT << std::endl;
     }
 
     return(0);
