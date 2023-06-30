@@ -170,6 +170,7 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                                 auto ret = getpeername(Fd, (struct sockaddr *)&peer, &sock_len);
                                 if(ret < 0 && errno == ENOTCONN) {
                                     //re-attemp connection now.
+                                    std::cout << "line: " << __LINE__ << " re-attempting the connection " << std::endl;
                                     auto& inst = GetService(serviceType);
                                     auto IP = inst->ip();
                                     auto PORT = inst->port();
@@ -439,7 +440,7 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
             } else if(ent.events == EPOLLERR) {
                 std::cout << "line: " << __LINE__ << " epollerr events: " << ent.events << std::endl;
             } else {
-                std::cout << "line: " << __LINE__ << " unhandled events: " << ent.events << std::endl;
+                //std::cout << "line: " << __LINE__ << " unhandled events: " << ent.events << std::endl;
             }
         }
     }
