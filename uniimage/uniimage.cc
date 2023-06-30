@@ -156,9 +156,7 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
             if(ent.events == EPOLLOUT) {
                 //Descriptor is ready for Write
                 switch(serviceType) {
-
                     case noor::ServiceType::Tcp_Device_Client_Service_Async:
-                    case noor::ServiceType::Tcp_Device_Console_Client_Service_Async:
                     {
                         do {
                             // check that there's no error for socket.
@@ -197,11 +195,43 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                         
                     }
                     break;
-                    
+
+                    case noor::ServiceType::Tcp_Device_Console_Client_Service_Async:
+                    {
+                        do {
+                            // check that there's no error for socket.
+                            std::int32_t optval = -1;
+                            socklen_t optlen = sizeof(optval);
+                            if(!getsockopt(Fd, SOL_SOCKET, SO_ERROR, &optval, &optlen)) {
+                                struct sockaddr_in peer;
+                                socklen_t sock_len = sizeof(peer);
+                                memset(&peer, 0, sizeof(peer));
+
+                                auto ret = getpeername(Fd, (struct sockaddr *)&peer, &sock_len);
+                                if(ret < 0 && errno == ENOTCONN) {
+                                    //re-attemp connection now.
+                                    auto& inst = GetService(serviceType);
+                                    auto IP = inst->ip();
+                                    auto PORT = inst->port();
+                                    DeRegisterFromEPoll(Fd);
+                                    CreateServiceAndRegisterToEPoll(serviceType, IP, PORT, true);
+                                    break;
+                                }
+                            }
+
+                            //There's no error on the socket
+                            ent.events = EPOLLIN | EPOLLHUP | EPOLLERR; 
+                            auto ret = ::epoll_ctl(m_epollFd, EPOLL_CTL_MOD, Fd, &ent);
+
+                        } while(0);
+                    }
+                    break;
+
                     default:
                     {
 
                     }
+                    break;
                 }
             } else if(ent.events == EPOLLIN) {
                 //file descriptor is ready for read.
