@@ -283,9 +283,17 @@ class noor::RestClient {
     public:
         RestClient() {}
         ~RestClient() {}
-        std::string getToken(const std::string& in) {}
-        std::string authorizeToken(const std::string& in) {}
-        std::string buildRequest(const std::string& in, std::vector<std::string> param = {}) {}
+        std::string getToken(const std::string& in) {
+            std::string rsp("");
+
+            return(rsp);
+        }
+        std::string authorizeToken(const std::string& in) {
+            return(std::string());
+        }
+        std::string buildRequest(const std::string& in, std::vector<std::string> param = {}) {
+            return(std::string());
+        }
     private:
         std::string cookies;
 };
