@@ -545,6 +545,7 @@ class TcpClient: public noor::Service {
         }
 
         TcpClient(const std::string& IP, const std::uint16_t& PORT, bool isAsync) {
+            std::cout << "line: " << __LINE__ << "handle: " << handle() << " async client connection is-progress: " << connected_client(handle()) << std::endl;
             tcp_client(IP, PORT, isAsync);
         }
 
