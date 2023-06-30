@@ -322,6 +322,13 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                             for(const auto&ent: m_deviceRspCache.begin()->second) {
                                 //std::cout << "line: " << __LINE__ << " m_devideRspCache: " << ent <<std::endl;
                             }
+                            if(5 == m_deviceRspCache.begin()->second.size()) {
+                                auto it = std::find_if(m_services.begin(), m_services.end(), [&](const auto svcType) ->bool {});
+                                auto &svc = GetService(noor::ServiceType::Tcp_Device_Client_Service_Async);
+                                if(noor::client_connection::Connected == svc->connected_client(svc->handle())) {
+                                    //Push to Device Management Server
+                                }
+                            }
                         }
                     }
                     break;
