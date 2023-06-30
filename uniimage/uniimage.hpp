@@ -536,17 +536,17 @@ class TcpClient: public noor::Service {
                     tls().client();
                 }
 
-                std::cout << "line: " << __LINE__ << "handle: " << handle() << " TLS Client Sync: " << connected_client(handle()) << std::endl;
+                std::cout << "line: " << __LINE__ << " handle: " << handle() << " TLS Client Sync: " << connected_client(handle()) << std::endl;
 
             }  else {
                 tcp_client_async(get_config().at("server-ip"), std::stoi(get_config().at("server-port")));
-                std::cout << "line: " << __LINE__ << "handle: " << handle() << " async client connection is-progress: " << connected_client(handle()) << std::endl;
+                std::cout << "line: " << __LINE__ << " handle: " << handle() << " async client connection is-progress: " << connected_client(handle()) << std::endl;
             }
         }
 
         TcpClient(const std::string& IP, const std::uint16_t& PORT, bool isAsync) {
-            std::cout << "line: " << __LINE__ << "handle: " << handle() << " async client connection is-progress: " << connected_client(handle()) << std::endl;
             tcp_client(IP, PORT, isAsync);
+            std::cout << "line: " << __LINE__ << " handle: " << handle() << " async client connection is-progress: " << connected_client(handle()) << std::endl;
         }
 
         TcpClient(const std::int32_t& fd, const std::string& IP , const std::int32_t& PORT) {
