@@ -228,7 +228,7 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                         } while(0);
                     }
                     break;
-                    case noor::ServiceType::Tls_Tcp_Device_Rest_Client_Service_Sync:
+                    case noor::ServiceType::Tls_Tcp_Device_Rest_Client_Service_Async:
                     {
                         //tcp connection is established - do tls handshake
                         auto& svc = GetService(serviceType);
@@ -512,7 +512,7 @@ std::int32_t noor::Uniimage::RegisterToEPoll(noor::ServiceType serviceType) {
 
     if((serviceType == noor::ServiceType::Tcp_Device_Client_Service_Async) ||
        (serviceType == noor::ServiceType::Tcp_Device_Console_Client_Service_Async) ||
-       (serviceType == noor::ServiceType::Tls_Tcp_Device_Rest_Client_Service_Sync)) {
+       (serviceType == noor::ServiceType::Tls_Tcp_Device_Rest_Client_Service_Async)) {
 
         evt.events = EPOLLOUT | EPOLLERR | EPOLLHUP;
     } else {
