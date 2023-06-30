@@ -540,7 +540,7 @@ class TcpClient: public noor::Service {
 
             }  else {
                 tcp_client_async(get_config().at("server-ip"), std::stoi(get_config().at("server-port")));
-                std::cout << "line: " << __LINE__ << "handle: " << handle() << " data store app client connection is-progress: " << connected_client(handle()) << std::endl;
+                std::cout << "line: " << __LINE__ << "handle: " << handle() << " async client connection is-progress: " << connected_client(handle()) << std::endl;
             }
         }
 
