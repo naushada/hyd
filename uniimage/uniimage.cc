@@ -180,7 +180,7 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                                     break;
                                 }
                             }
-
+                            std::cout << "line: " << __LINE__ << " client is connected successfully " << std::endl;
                             //There's no error on the socket
                             ent.events = EPOLLIN | EPOLLHUP | EPOLLERR; 
                             auto ret = ::epoll_ctl(m_epollFd, EPOLL_CTL_MOD, Fd, &ent);
@@ -191,6 +191,47 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                                     std::cout << "line: " << __LINE__ << " from cache: " << ent << std::endl;
                                 }
                                 //svc->tcp_tx(Fd, getResponseCache().begin()->second);
+                            }
+                            
+                        } while(0);
+                        
+                    }
+                    break;
+
+                    case noor::ServiceType::Tls_Tcp_Device_Client_Service_Async:
+                    {
+                        do {
+                            // check that there's no error for socket.
+                            std::int32_t optval = -1;
+                            socklen_t optlen = sizeof(optval);
+                            if(!getsockopt(Fd, SOL_SOCKET, SO_ERROR, &optval, &optlen)) {
+                                struct sockaddr_in peer;
+                                socklen_t sock_len = sizeof(peer);
+                                memset(&peer, 0, sizeof(peer));
+
+                                auto ret = getpeername(Fd, (struct sockaddr *)&peer, &sock_len);
+                                if(ret < 0 && errno == ENOTCONN) {
+                                    //re-attemp connection now.
+                                    std::cout << "line: " << __LINE__ << " re-attempting the connection " << std::endl;
+                                    auto& inst = GetService(serviceType);
+                                    auto IP = inst->ip();
+                                    auto PORT = inst->port();
+                                    DeRegisterFromEPoll(Fd);
+                                    CreateServiceAndRegisterToEPoll(serviceType, IP, PORT, true);
+                                    break;
+                                }
+                            }
+                            std::cout << "line: " << __LINE__ << " Tls Tcp client is connected successfully " << std::endl;
+                            //There's no error on the socket
+                            ent.events = EPOLLIN | EPOLLHUP | EPOLLERR; 
+                            auto ret = ::epoll_ctl(m_epollFd, EPOLL_CTL_MOD, Fd, &ent);
+                            //Send the cached response from Data Store now.
+                            auto &svc = GetService(noor::ServiceType::Unix_Data_Store_Client_Service_Sync);
+                            if(!getResponseCache().empty()) {
+                                for(const auto& ent: getResponseCache().begin()->second) {
+                                    std::cout << "line: " << __LINE__ << " from cache: " << ent << std::endl;
+                                }
+                                //svc->tls().write();
                             }
                             
                         } while(0);
@@ -638,7 +679,7 @@ int main(std::int32_t argc, char *argv[]) {
                           << "--web-port  <server-web-port for http request> " << std::endl
                           << "--self-ip   <self ip for bind receive request> " << std::endl
                           << "--self-port <self port for bind to receive request> " << std::endl
-                          << "--protocol  <tcp|udp|unix> " << std::endl
+                          << "--protocol  <tcp|udp|unix/tls> " << std::endl
                           << "--wan-interface-instance <c1|c3|c4|c5|w1|w2|e1|e2|e3> " << std::endl
                           << "--time-out <value in ms> " << std::endl
                           << "--machine <host|> " << std::endl;
