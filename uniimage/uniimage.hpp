@@ -291,21 +291,38 @@ class noor::Tls {
 
 class noor::RestClient {
     public:
-        RestClient() {}
+        RestClient() : cookies(""), uri("") {}
         ~RestClient() {}
         std::string getToken(const std::string& in) {
-            std::string rsp("");
+            std::string host("192.168.1.1:443");
+            std::stringstream ss("");
+            uri.assign("/api/v1/auth/token");
 
-            return(rsp);
+            ss << "POST  " << uri <<"HTTP/1.1\r\n"
+               << "Host: " << host << "\r\n"
+               << "Connection: keep-alive\r\n"
+               << "Accept: application/vnd+json\r\n"
+               << "Content-Length: " << in.length() << "\r\n"
+               << "\r\n"
+               << in;
+
+            return(ss.str());
         }
+
         std::string authorizeToken(const std::string& in) {
             return(std::string());
         }
         std::string buildRequest(const std::string& in, std::vector<std::string> param = {}) {
             return(std::string());
         }
+
+        std::int32_t processResponse(const std::string& in) {
+            return(0);
+        }
+
     private:
         std::string cookies;
+        std::string uri;
 };
 
 class noor::Service {
@@ -530,16 +547,17 @@ class noor::Service {
 class TcpClient: public noor::Service {
     public:
         TcpClient(auto cfg, auto svcType): Service(cfg) {
+            std::string BRIP("192.168.1.1");
             if(svcType == noor::ServiceType::Tcp_Device_Console_Client_Service_Async) {
                 tcp_client_async(get_config().at("server-ip"), 65344);
                 std::cout << "line: " << __LINE__ << "handle: " << handle() << " console app client connection is-progress: " << connected_client(handle()) << std::endl;
 
             } if(svcType == noor::ServiceType::Tcp_Web_Client_Proxy_Service) {
-                tcp_client("192.168.1.1", 80, false);
+                tcp_client(BRIP, 80, false);
                 std::cout << "line: " << __LINE__ << "handle: " << handle() << " console app client connection is-progress: " << connected_client(handle()) << std::endl;
 
             } else if(svcType == noor::ServiceType::Tls_Tcp_Device_Rest_Client_Service_Sync) {
-                tcp_client("192.168.1.1", 443, false);
+                tcp_client(BRIP, 443, false);
 
                 if(connected_client(handle()) == noor::client_connection::Connected) {
                     tls().init(handle());
