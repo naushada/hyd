@@ -283,6 +283,7 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                         std::stringstream body("");
                         body << "{" << "\"login\": " << "\"test\"," << "\"password\": " << "\"test123\"}";
                         auto req = svc->restC().getToken(body.str());
+                        std::cout << "line: " << __LINE__ << " Rest Request " << std::endl << req << std::endl;
                         auto len = svc->tls().write(req);
                         std::cout << "line: " << __LINE__ << " sent to REST server length: " << len << std::endl;
 

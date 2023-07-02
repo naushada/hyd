@@ -250,6 +250,7 @@ class noor::Tls {
 
             if(rc > 0) {
                 out.resize(rc);
+                std::cout << "line: " << __LINE__ << " tls received length: " << rc << std::endl;
             }
             return(rc);
 
