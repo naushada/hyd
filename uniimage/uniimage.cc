@@ -462,22 +462,38 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                         auto &svc = GetService(serviceType);
                         std::string out;
                         std::int32_t len = -1;
+                        std::int32_t payload_len = -1;
+
                         do {
                             auto ret = svc->tls().peek(out);
                             if(ret > 0) {
                                 Http http(out);
                                 auto ct = http.value("Content-Length");
+                                len = http.get_header(out).length();
+
                                 if(ct.length() > 0) {
                                     //Content-Length is present
-                                    len = http.get_header(out).length() + std::stoi(ct);
+                                    payload_len = std::stoi(ct);
+                                    std::cout << "line: " << __LINE__ << " value of content-length: " << std::stoi(ct) << std::endl;
                                 }
                             }
                         }while(len != out.length());
 
-                        svc->tls().read(out);
+                        //Read HTTP Header first.
+                        if(len > 0) {
+                            svc->tls().read(out);
+                            if(out.length()) {
+                                std::cout << "line: " << __LINE__ << " tls_read: " << out  <<" length: " << out.length() << std::endl;
+                            }
+                        }
 
-                        if(out.length()) {
-                            std::cout << "line: " << __LINE__ << " tls_read: " << out  <<" length: " << out.length() << std::endl;
+                        if(payload_len > 0) {
+                            std::string body;
+                            svc->tls().read(body);
+                            if(body.length()) {
+                                std::cout << "line: " << __LINE__ << " tls_read: " << body  <<" length: " << body.length() << std::endl;
+                                std::cout << "line: " << __LINE__ << " body: " << body << std::endl;
+                            }
                         }
                     }
                     break;
