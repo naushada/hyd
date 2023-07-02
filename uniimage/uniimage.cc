@@ -280,6 +280,11 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                         ent.events = EPOLLIN | EPOLLHUP | EPOLLERR; 
                         auto ret = ::epoll_ctl(m_epollFd, EPOLL_CTL_MOD, Fd, &ent);
                         //Get Token for Rest Client
+                        std::stringstream body("");
+                        body << "{" << "\"login\": " << "\"test\"," << "\"password\": " << "\"test123\"}";
+                        auto req = svc->restC().getToken(body.str());
+                        auto len = svc->tls().write(req);
+                        std::cout << "line: " << __LINE__ << " sent to REST server length: " << len << std::endl;
 
                     }
                     break;
