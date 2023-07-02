@@ -461,7 +461,7 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                     {
                         auto &svc = GetService(serviceType);
                         std::string out;
-                        std::int32_t len = -1;
+                        std::int32_t header_len = -1;
                         std::int32_t payload_len = -1;
                         
                         do {
@@ -469,7 +469,7 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                             if(ret > 0) {
                                 Http http(out);
                                 auto ct = http.value("Content-Length");
-                                len = http.get_header(out).length() + 1;
+                                header_len = http.get_header(out).length() + 1;
 
                                 if(ct.length() > 0) {
                                     //Content-Length is present
@@ -477,19 +477,17 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                                     std::cout << "line: " << __LINE__ << " value of content-length: " << std::stoi(ct) << std::endl;
                                 }
                             }
-                        }while(len != out.length());
-                        
+                        }while(header_len != out.length());
 
                         //Read HTTP Header first.
-                        svc->tls().read(out, len);
+                        svc->tls().read(out, header_len);
                         if(out.length()) {
                             std::cout << "line: " << __LINE__ << " tls_read: " << out  <<" length: " << out.length() << std::endl;
                         }
 
-                        //Http http(out);
-                        //auto ct = http.value("Content-Length");
-
+                        //HTTP Body
                         if(payload_len > 0) {
+
                             std::stringstream ss;
                             std::string body;
                             size_t offset = 0;
@@ -501,10 +499,14 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                                 }
                                 ss << body;
                                 offset += ret;
+
                             }while(offset != payload_len);
 
                             if(offset == payload_len) {
                                 std::cout << "line: " << __LINE__ << " payload: " << ss.str() << std::endl;
+                                //Process Response Now.
+                                auto json_obj = json::parse(ss.str());
+                                std::cout << "line: " << __LINE__ << "json_obj[data][access_token]: " << json_obj["data"]["access_token"] << std::endl; 
                             }
                         }
                     }
