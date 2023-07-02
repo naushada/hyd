@@ -461,6 +461,15 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                     {
                         auto &svc = GetService(serviceType);
                         std::string out;
+                        std::int32_t len = -1;
+                        do {
+                            auto ret = svc->tls().peek(out);
+                            if(ret > 0) {
+                                Http http(out);
+                                len = http.get_header(out).length() + http.get_body(out).length();
+                            }
+                        }while(len != out.length());
+
                         svc->tls().read(out);
 
                         if(out.length()) {

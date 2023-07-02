@@ -235,10 +235,13 @@ class noor::Tls {
 
         std::int32_t peek(std::string& out, std::uint32_t len = 2048) {
             int rc = -1;
-            rc = SSL_peek(m_ssl.get(), out.data(), len);
+            std::array<char, 2048> ss;
+            ss.fill(0);
+
+            rc = SSL_peek(m_ssl.get(), ss.data(), ss.size());
 
             if(rc > 0) {
-                out.resize(rc);
+                out.assign(ss.data(), rc);
             }
             return(rc);
 
@@ -252,7 +255,6 @@ class noor::Tls {
 
             if(rc > 0) {
                 out.assign(ss.data(), rc);
-                std::cout << "line: " << __LINE__ << " tls received length: " << rc << std::endl;
             }
             return(rc);
 
