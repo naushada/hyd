@@ -463,13 +463,13 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                         std::string out;
                         std::int32_t len = -1;
                         std::int32_t payload_len = -1;
-                        #if 0
+                        
                         do {
                             auto ret = svc->tls().peek(out);
                             if(ret > 0) {
                                 Http http(out);
                                 auto ct = http.value("Content-Length");
-                                len = http.get_header(out).length();
+                                len = http.get_header(out).length() + 1;
 
                                 if(ct.length() > 0) {
                                     //Content-Length is present
@@ -478,32 +478,33 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                                 }
                             }
                         }while(len != out.length());
-                        #endif
+                        
 
                         //Read HTTP Header first.
-                        svc->tls().read(out);
+                        svc->tls().read(out, len);
                         if(out.length()) {
                             std::cout << "line: " << __LINE__ << " tls_read: " << out  <<" length: " << out.length() << std::endl;
                         }
 
-                        Http http(out);
-                        auto ct = http.value("Content-Length");
+                        //Http http(out);
+                        //auto ct = http.value("Content-Length");
 
-                        if(ct.length() > 0) {
-                            payload_len = std::stoi(ct);
+                        if(payload_len > 0) {
                             std::stringstream ss;
                             std::string body;
                             size_t offset = 0;
+
                             do {
                                 auto ret = svc->tls().read(body, payload_len-offset);
                                 if(ret < 0) {
                                     break;
                                 }
+                                ss << body;
                                 offset += ret;
                             }while(offset != payload_len);
 
                             if(offset == payload_len) {
-                                std::cout << "line: " << __LINE__ << " payload: " << body << std::endl;
+                                std::cout << "line: " << __LINE__ << " payload: " << ss.str() << std::endl;
                             }
                         }
                     }
