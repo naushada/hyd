@@ -463,7 +463,7 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                         std::string out;
                         std::int32_t len = -1;
                         std::int32_t payload_len = -1;
-
+                        #if 0
                         do {
                             auto ret = svc->tls().peek(out);
                             if(ret > 0) {
@@ -478,21 +478,32 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                                 }
                             }
                         }while(len != out.length());
+                        #endif
 
                         //Read HTTP Header first.
-                        if(len > 0) {
-                            svc->tls().read(out);
-                            if(out.length()) {
-                                std::cout << "line: " << __LINE__ << " tls_read: " << out  <<" length: " << out.length() << std::endl;
-                            }
+                        svc->tls().read(out);
+                        if(out.length()) {
+                            std::cout << "line: " << __LINE__ << " tls_read: " << out  <<" length: " << out.length() << std::endl;
                         }
 
-                        if(payload_len > 0) {
+                        Http http(out);
+                        auto ct = http.value("Content-Length");
+
+                        if(ct.length() > 0) {
+                            payload_len = std::stoi(ct);
+                            std::stringstream ss;
                             std::string body;
-                            svc->tls().read(body);
-                            if(body.length()) {
-                                std::cout << "line: " << __LINE__ << " tls_read: " << body  <<" length: " << body.length() << std::endl;
-                                std::cout << "line: " << __LINE__ << " body: " << body << std::endl;
+                            size_t offset = 0;
+                            do {
+                                auto ret = svc->tls().read(body, payload_len-offset);
+                                if(ret < 0) {
+                                    break;
+                                }
+                                offset += ret;
+                            }while(offset != payload_len);
+
+                            if(offset == payload_len) {
+                                std::cout << "line: " << __LINE__ << " payload: " << body << std::endl;
                             }
                         }
                     }

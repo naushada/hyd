@@ -238,7 +238,7 @@ class noor::Tls {
             std::array<char, 2048> ss;
             ss.fill(0);
 
-            rc = SSL_peek(m_ssl.get(), ss.data(), ss.size());
+            rc = SSL_peek(m_ssl.get(), ss.data(), len);
 
             if(rc > 0) {
                 out.assign(ss.data(), rc);
