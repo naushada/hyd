@@ -466,7 +466,11 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                             auto ret = svc->tls().peek(out);
                             if(ret > 0) {
                                 Http http(out);
-                                len = http.get_header(out).length() + http.get_body(out).length();
+                                auto ct = http.value("Content-Length");
+                                if(ct.length() > 0) {
+                                    //Content-Length is present
+                                    len = http.get_header(out).length() + std::stoi(ct);
+                                }
                             }
                         }while(len != out.length());
 
