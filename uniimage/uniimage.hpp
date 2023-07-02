@@ -296,12 +296,13 @@ class noor::RestClient {
         std::string getToken(const std::string& in) {
             std::string host("192.168.1.1:443");
             std::stringstream ss("");
-            uri.assign("/api/v1/auth/token");
+            uri.assign("/api/v1/auth/tokens");
 
             ss << "POST  " << uri <<" HTTP/1.1\r\n"
                << "Host: " << host << "\r\n"
+               << "Content-Type: application/vnd.api+json\r\n"
                << "Connection: keep-alive\r\n"
-               << "Accept: application/vnd+json\r\n"
+               << "Accept: application/vnd.api+json\r\n"
                << "Content-Length: " << in.length() << "\r\n"
                << "\r\n"
                << in;
