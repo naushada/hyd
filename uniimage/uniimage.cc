@@ -286,7 +286,6 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                         std::cout << "line: " << __LINE__ << " Rest Request " << std::endl << req << std::endl;
                         auto len = svc->tls().write(req);
                         std::cout << "line: " << __LINE__ << " sent to REST server length: " << len << std::endl;
-
                     }
                     break;
                     default:
@@ -461,12 +460,11 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                     case noor::ServiceType::Tls_Tcp_Device_Rest_Client_Service_Sync:
                     {
                         auto &svc = GetService(serviceType);
-                        //auto result = svc->tcp_rx(Fd, request);
-                        std::string out("");
+                        std::string out;
                         svc->tls().read(out);
 
                         if(out.length()) {
-                            std::cout << "line: " << __LINE__ << " tls_read: " << out << std::endl;
+                            std::cout << "line: " << __LINE__ << " tls_read: " << out  <<" length: " << out.length() << std::endl;
                         }
                     }
                     break;

@@ -246,10 +246,12 @@ class noor::Tls {
 
         std::int32_t read(std::string& out, std::uint32_t len = 2048) {
             std::int32_t rc = -1;
-            rc = SSL_read(m_ssl.get(), out.data(), len);
+            std::array<char, 2048> ss;
+            ss.fill(0);
+            rc = SSL_read(m_ssl.get(), ss.data(), ss.size());
 
             if(rc > 0) {
-                out.resize(rc);
+                out.assign(ss.data(), rc);
                 std::cout << "line: " << __LINE__ << " tls received length: " << rc << std::endl;
             }
             return(rc);
