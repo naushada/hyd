@@ -262,7 +262,7 @@ class noor::Tls {
             }
 
             std::stringstream ss;
-            std::int32_t offset = -1;
+            std::int32_t offset = 0;
             std::string tmp;
 
             do {
