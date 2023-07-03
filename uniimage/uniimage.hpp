@@ -249,14 +249,39 @@ class noor::Tls {
 
         std::int32_t read(std::string& out, std::uint32_t len = 2048) {
             std::int32_t rc = -1;
-            std::array<char, 2048> ss;
-            ss.fill(0);
-            rc = SSL_read(m_ssl.get(), ss.data(), ss.size());
-
-            if(rc > 0) {
-                out.assign(ss.data(), rc);
+            std::array<char, 2048> in;
+            in.fill(0);
+            
+            if(len == in.size()) {
+                in.fill(0);
+                rc = SSL_read(m_ssl.get(), in.data(), in.size());
+                if(rc < 0) {
+                    return(rc);
+                }
+                out.assign(in.data(), rc);
+                return(rc);
             }
-            return(rc);
+
+            std::stringstream ss;
+            std::int32_t offset = -1;
+            std::string tmp;
+
+            do {
+                in.fill(0);
+                rc = SSL_read(m_ssl.get(), in.data(), len - offset);
+
+                if(rc < 0) {
+                    return(rc);
+                }
+
+                offset += rc;
+                tmp.assign(in.data(), rc);
+                ss << tmp;
+
+            }while(len != offset);
+
+            out.assign(ss.str());
+            return(offset);
 
         }/*read*/
 
