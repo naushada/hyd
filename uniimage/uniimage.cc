@@ -501,8 +501,9 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                                 break;
                             }
 
-                            auto json_obj = json::parse(body);
-                            std::cout << "line: " << __LINE__ << " json_obj[data][access_token]: " << json_obj["data"]["access_token"] << std::endl;
+                            //auto json_obj = json::parse(body);
+                            //std::cout << "line: " << __LINE__ << " json_obj[data][access_token]: " << json_obj["data"]["access_token"] << std::endl;
+                            svc->restC().processResponse(out, body);
 
                         }while(0);
                     }
@@ -687,7 +688,7 @@ std::string noor::RestClient::buildRequest(const std::string& in, std::vector<st
     return(std::string());
 }
 
-std::string noor::RestClient::processResponse(const std::string& http_header, const std::string& http_body, auto& svc) {
+std::string noor::RestClient::processResponse(const std::string& http_header, const std::string& http_body) {
     if(!uri.compare("/api/v1/auth/tokens")) {
         json json_object = json::parse(http_body);
         cookies.assign(json_object["data"]["access_token"]);
