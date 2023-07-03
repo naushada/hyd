@@ -483,9 +483,9 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                             //Read HTTP Header first.
                             auto ret = svc->tls().read(out, header_len);
                             if(ret < 0) {
-                                std::cout << "line: " << __LINE__ << " tls_read: " << out  <<" length: " << out.length() << std::endl;
                                 break;
                             }
+                            std::cout << "line: " << __LINE__ << " tls_read: " << out  <<" length: " << out.length() << std::endl;
 
                             //HTTP Body
                             if(payload_len < 0) {
@@ -503,6 +503,7 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
 
                             auto json_obj = json::parse(body);
                             std::cout << "line: " << __LINE__ << " json_obj[data][access_token]: " << json_obj["data"]["access_token"] << std::endl;
+
                         }while(0);
                     }
                     break;

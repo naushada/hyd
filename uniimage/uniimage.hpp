@@ -253,8 +253,7 @@ class noor::Tls {
             in.fill(0);
 
             if(len == 2048) {
-                in.fill(0);
-                rc = SSL_read(m_ssl.get(), in.data(), in.size());
+                rc = SSL_read(m_ssl.get(), in.data(), len);
                 if(rc < 0) {
                     return(rc);
                 }
