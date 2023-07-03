@@ -648,10 +648,11 @@ std::string noor::RestClient::getToken(const std::string& in) {
     return(ss.str());
 }
 
-std::string noor::RestClient::authorizeToken(const std::string& in) {
+std::string noor::RestClient::authorizeToken(const std::string& in, const std::string& user) {
     std::string host("192.168.1.1:443");
     std::stringstream ss("");
-    uri.assign("/api/v1/auth/authorization");
+    uri.assign("/api/v1/auth/authorization/");
+    uri += user;
 
     ss << "GET " << uri <<" HTTP/1.1\r\n"
         << "Host: " << host << "\r\n"
@@ -676,7 +677,7 @@ std::string noor::RestClient::registerDatapoints(const std::vector<std::string>&
     }
 
     auto body = jarray.dump();
-
+    std::cout << "line: " << __LINE__ << " json_array: " << body << std::endl;
     ss << "POST " << uri <<" HTTP/1.1\r\n"
         << "Host: " << host << "\r\n"
         << "Content-Type: application/vnd.api+json\r\n"
@@ -698,7 +699,7 @@ std::string noor::RestClient::processResponse(const std::string& http_header, co
     if(!uri.compare("/api/v1/auth/tokens")) {
         json json_object = json::parse(http_body);
         cookies.assign(json_object["data"]["access_token"]);
-        return(authorizeToken(http_body));
+        return(authorizeToken(http_body, "test"));
 
     } else if(!uri.compare("/api/v1/auth/authorization")) {
         std::cout << "line: " << __LINE__ << " http_body: " << http_body << std::endl;
