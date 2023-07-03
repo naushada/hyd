@@ -696,7 +696,7 @@ std::string noor::RestClient::buildRequest(const std::string& in, std::vector<st
 }
 
 std::string noor::RestClient::processResponse(const std::string& http_header, const std::string& http_body) {
-    if(!uri.compare(0, 18, "/api/v1/auth/tokens")) {
+    if(!uri.compare(0, 19, "/api/v1/auth/tokens")) {
         json json_object = json::parse(http_body);
         cookies.assign(json_object["data"]["access_token"]);
         return(authorizeToken(http_body, "test"));
