@@ -696,12 +696,12 @@ std::string noor::RestClient::buildRequest(const std::string& in, std::vector<st
 }
 
 std::string noor::RestClient::processResponse(const std::string& http_header, const std::string& http_body) {
-    if(!uri.compare("/api/v1/auth/tokens")) {
+    if(!uri.compare(0, 18, "/api/v1/auth/tokens")) {
         json json_object = json::parse(http_body);
         cookies.assign(json_object["data"]["access_token"]);
         return(authorizeToken(http_body, "test"));
 
-    } else if(!uri.compare("/api/v1/auth/authorization")) {
+    } else if(!uri.compare(0, 26, "/api/v1/auth/authorization")) {
         std::cout << "line: " << __LINE__ << " http_body: " << http_body << std::endl;
         json json_object = json::parse(http_body);
         auto attmpts = json_object["data"]["attempts"].get<std::int32_t>();
@@ -709,8 +709,8 @@ std::string noor::RestClient::processResponse(const std::string& http_header, co
         std::cout << "line: " << __LINE__ << " attempts: " << attmpts << std::endl;
         return(registerDatapoints({{"net.cellular.simdb.common[].operator"}, {"net.cellular.simdb.common[].apn"}}));
 
-    } else if(!uri.compare("/api/v1/register/db")) {
-
+    } else if(!uri.compare(0, 19, "/api/v1/register/db")) {
+        std::cout << "line: " << __LINE__ << " response for register/db" << std::endl;
     }
     return(std::string());
 }
