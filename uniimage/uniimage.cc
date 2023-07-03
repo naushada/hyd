@@ -479,35 +479,31 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                             }
                         }while(header_len != out.length());
 
-                        //Read HTTP Header first.
-                        svc->tls().read(out, header_len);
-                        if(out.length()) {
-                            std::cout << "line: " << __LINE__ << " tls_read: " << out  <<" length: " << out.length() << std::endl;
-                        }
-
-                        //HTTP Body
-                        if(payload_len > 0) {
-                            std::stringstream ss;
-                            std::string body;
-                            size_t offset = 0;
-
-                            do {
-                                auto ret = svc->tls().read(body, payload_len-offset);
-                                if(ret < 0) {
-                                    break;
-                                }
-                                ss << body;
-                                offset += ret;
-
-                            }while(offset != payload_len);
-
-                            if(offset == payload_len) {
-                                std::cout << "line: " << __LINE__ << " payload: " << ss.str() << std::endl;
-                                //Process Response Now.
-                                auto json_obj = json::parse(ss.str());
-                                std::cout << "line: " << __LINE__ << " json_obj[data][access_token]: " << json_obj["data"]["access_token"] << std::endl; 
+                        do {
+                            //Read HTTP Header first.
+                            auto ret = svc->tls().read(out, header_len);
+                            if(ret < 0) {
+                                std::cout << "line: " << __LINE__ << " tls_read: " << out  <<" length: " << out.length() << std::endl;
+                                break;
                             }
-                        }
+
+                            //HTTP Body
+                            if(payload_len < 0) {
+                                break;
+                            }
+
+                            std::string body;
+                            body.clear();
+                            ret = svc->tls().read(body, payload_len);
+
+                            //Process Response Now.
+                            if(ret < 0) {
+                                break;
+                            }
+
+                            auto json_obj = json::parse(body);
+                            std::cout << "line: " << __LINE__ << " json_obj[data][access_token]: " << json_obj["data"]["access_token"] << std::endl;
+                        }while(0);
                     }
                     break;
 
