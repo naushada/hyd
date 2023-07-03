@@ -503,7 +503,13 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
 
                             //auto json_obj = json::parse(body);
                             //std::cout << "line: " << __LINE__ << " json_obj[data][access_token]: " << json_obj["data"]["access_token"] << std::endl;
-                            svc->restC().processResponse(out, body);
+                            auto req = svc->restC().processResponse(out, body);
+                            ret = svc->tls().write(req);
+                            if(ret < 0) {
+                                break;
+                            }
+
+                            std::cout << "line: " << __LINE__ << " request sent to : " << req << std::endl;
 
                         }while(0);
                     }
