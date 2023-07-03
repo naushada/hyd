@@ -675,10 +675,13 @@ std::string noor::RestClient::registerDatapoints(const std::vector<std::string>&
     for(const auto& ent: dps) {
         jarray.push_back(ent);
     }
-    json jobject = json::object({"last", jarray.dump()});
-    auto body = jobject.dump();
-    std::cout << "line: " << __LINE__ << " json_array: " << body << std::endl;
+    auto body = jarray.dump();
+
+    json jobject = json::object({"last", body});
+    body = jobject.dump();
     
+    std::cout << "line: " << __LINE__ << " json_array: " << body << std::endl;
+
     ss << "POST " << uri <<" HTTP/1.1\r\n"
         << "Host: " << host << "\r\n"
         << "Content-Type: application/vnd.api+json\r\n"
