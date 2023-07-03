@@ -624,6 +624,90 @@ std::unique_ptr<noor::Service>& noor::Uniimage::GetService(noor::ServiceType ser
     return(m_services[serviceType]);
 }
 
+std::string noor::RestClient::getToken(const std::string& in) {
+    std::string host("192.168.1.1:443");
+    std::stringstream ss("");
+    uri.assign("/api/v1/auth/tokens");
+
+    ss << "POST " << uri <<" HTTP/1.1\r\n"
+        << "Host: " << host << "\r\n"
+        << "Content-Type: application/vnd.api+json\r\n"
+        << "Connection: keep-alive\r\n"
+        << "Accept: application/vnd.api+json\r\n"
+        << "Content-Length: " << in.length() << "\r\n"
+        << "\r\n"
+        << in;
+
+    return(ss.str());
+}
+
+std::string noor::RestClient::authorizeToken(const std::string& in) {
+    std::string host("192.168.1.1:443");
+    std::stringstream ss("");
+    uri.assign("/api/v1/auth/authorization");
+
+    ss << "GET " << uri <<" HTTP/1.1\r\n"
+        << "Host: " << host << "\r\n"
+        << "Content-Type: application/vnd.api+json\r\n"
+        << "Connection: keep-alive\r\n"
+        << "Accept: application/vnd.api+json\r\n"
+        << "Authorization: Bearer " << cookies << "\r\n"
+        << "Content-Length: 0" << "\r\n"
+        << "\r\n";
+
+    return(ss.str());
+}
+
+std::string noor::RestClient::registerDatapoints(const std::vector<std::string>& dps) {
+    std::string host("192.168.1.1:443");
+    std::stringstream ss("");
+    uri.assign("/api/v1/db/register");
+
+    json jarray = json::array();
+    for(const auto& ent: dps) {
+        jarray.push_back(ent);
+    }
+
+    auto body = jarray.dump();
+
+    ss << "POST " << uri <<" HTTP/1.1\r\n"
+        << "Host: " << host << "\r\n"
+        << "Content-Type: application/vnd.api+json\r\n"
+        << "Connection: keep-alive\r\n"
+        << "Accept: application/vnd.api+json\r\n"
+        << "Authorization: Bearer " << cookies << "\r\n"
+        << "Content-Length: " << body.length() << "\r\n"
+        << "\r\n"
+        << body;
+
+    return(ss.str());
+}
+
+std::string noor::RestClient::buildRequest(const std::string& in, std::vector<std::string> param) {
+    return(std::string());
+}
+
+std::string noor::RestClient::processResponse(const std::string& http_header, const std::string& http_body, auto& svc) {
+    if(!uri.compare("/api/v1/auth/tokens")) {
+        json json_object = json::parse(http_body);
+        cookies.assign(json_object["data"]["access_token"]);
+        return(authorizeToken(http_body));
+
+    } else if(!uri.compare("/api/v1/auth/authorization")) {
+        std::cout << "line: " << __LINE__ << " http_body: " << http_body << std::endl;
+        json json_object = json::parse(http_body);
+        auto attmpts = json_object["data"]["attempts"].get<std::int32_t>();
+        //auto attmpts = value;
+        std::cout << "line: " << __LINE__ << " attempts: " << attmpts << std::endl;
+        return(registerDatapoints({{"net.cellular.simdb.common[].operator"}, {"net.cellular.simdb.common[].apn"}}));
+
+    } else if(!uri.compare("/api/v1/register/db")) {
+
+    }
+    return(std::string());
+}
+
+
 std::vector<struct option> options = {
     {"role",                      required_argument, 0, 'r'},
     {"server-ip",                 required_argument, 0, 'i'},

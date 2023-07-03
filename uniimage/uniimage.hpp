@@ -322,33 +322,11 @@ class noor::RestClient {
     public:
         RestClient() : cookies(""), uri("") {}
         ~RestClient() {}
-        std::string getToken(const std::string& in) {
-            std::string host("192.168.1.1:443");
-            std::stringstream ss("");
-            uri.assign("/api/v1/auth/tokens");
-
-            ss << "POST " << uri <<" HTTP/1.1\r\n"
-               << "Host: " << host << "\r\n"
-               << "Content-Type: application/vnd.api+json\r\n"
-               << "Connection: keep-alive\r\n"
-               << "Accept: application/vnd.api+json\r\n"
-               << "Content-Length: " << in.length() << "\r\n"
-               << "\r\n"
-               << in;
-
-            return(ss.str());
-        }
-
-        std::string authorizeToken(const std::string& in) {
-            return(std::string());
-        }
-        std::string buildRequest(const std::string& in, std::vector<std::string> param = {}) {
-            return(std::string());
-        }
-
-        std::int32_t processResponse(const std::string& in) {
-            return(0);
-        }
+        std::string getToken(const std::string& in);
+        std::string authorizeToken(const std::string& in);
+        std::string registerDatapoints(const std::vector<std::string>& dps);
+        std::string buildRequest(const std::string& in, std::vector<std::string> param = {});
+        std::string processResponse(const std::string& http_header, const std::string& http_body, auto& svc);
 
     private:
         std::string cookies;
