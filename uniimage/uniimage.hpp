@@ -251,8 +251,8 @@ class noor::Tls {
             std::int32_t rc = -1;
             std::array<char, 2048> in;
             in.fill(0);
-            
-            if(len == in.size()) {
+
+            if(len == 2048) {
                 in.fill(0);
                 rc = SSL_read(m_ssl.get(), in.data(), in.size());
                 if(rc < 0) {
