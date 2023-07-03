@@ -678,7 +678,7 @@ std::string noor::RestClient::registerDatapoints(const std::vector<std::string>&
     auto body = jarray.dump();
 
     //json jobject = json::object({"last", body});
-    json jobject{"last", body};
+    json jobject{{"last", body}};
     body = jobject.dump();
     
     std::cout << "line: " << __LINE__ << " json_object: " << body << std::endl;
