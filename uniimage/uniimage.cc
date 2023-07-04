@@ -733,18 +733,9 @@ std::string noor::RestClient::processResponse(const std::string& http_header, co
             {
                 {"device"},
                 {"system.os"},
-                //WiFi Wan
-                {"net.interface.common[w1].ipv4.address"},
-                {"net.interface.common[w2].ipv4.address"},
-                {"net.interface.common[w3].ipv4.address"},
-                //Cellular Wan
-                {"net.interface.common[c2].ipv4.address"},
-                {"net.interface.common[c3].ipv4.address"},
-                {"net.interface.common[c4].ipv4.address"},
-                {"net.interface.common[c5].ipv4.address"},
-                //Ethernet Wan
-                {"net.interface.common[e1].ipv4.address"},
-                {"net.interface.common[e2].ipv4.address"},
+                //Wan IP Address
+                {"net.interface.common[].ipv4.address"},
+                
                 //WiFi Mode
                 {"net.interface.wifi[w1].radio.mode"},
                 {"net.interface.wifi[w2].radio.mode"},
