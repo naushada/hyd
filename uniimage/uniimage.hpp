@@ -261,20 +261,35 @@ class noor::Tls {
             std::int32_t offset = 0;
             std::string tmp;
 
-            do {
-                in.fill(0);
-                rc = SSL_read(m_ssl.get(), in.data(), len - offset);
+            if(len < 2048) {
+                do {
+                    in.fill(0);
+                    rc = SSL_read(m_ssl.get(), in.data(), len - offset);
 
-                if(rc < 0) {
-                    return(rc);
-                }
+                    if(rc < 0) {
+                        return(rc);
+                    }
 
-                offset += rc;
-                tmp.assign(in.data(), rc);
-                ss << tmp;
+                    offset += rc;
+                    tmp.assign(in.data(), rc);
+                    ss << tmp;
 
-            }while(len != offset);
+                }while(len != offset);
+            } else {
+                do {
+                    in.fill(0);
+                    rc = SSL_read(m_ssl.get(), in.data(), in.size());
 
+                    if(rc < 0) {
+                        return(rc);
+                    }
+
+                    offset += rc;
+                    tmp.assign(in.data(), rc);
+                    ss << tmp;
+
+                }while(len != offset);
+            }
             out.assign(ss.str());
             return(offset);
 
