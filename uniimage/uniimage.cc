@@ -669,7 +669,7 @@ std::string noor::RestClient::authorizeToken(const std::string& in, const std::s
 std::string noor::RestClient::registerDatapoints(const std::vector<std::string>& dps) {
     std::string host("192.168.1.1:443");
     std::stringstream ss("");
-    uri.assign("/api/v1/db/register?fetch=true");
+    uri.assign("/api/v1/register/db?fetch=true");
 
     json jarray = json::array();
     for(const auto& ent: dps) {
