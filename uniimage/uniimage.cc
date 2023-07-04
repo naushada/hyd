@@ -485,8 +485,6 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                             if(ret < 0) {
                                 break;
                             }
-                            std::cout << "line: " << __LINE__ << " tls_read: " << out  <<" length: " << out.length() << std::endl;
-
                             //HTTP Body
                             if(payload_len < 0) {
                                 break;
@@ -501,15 +499,14 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                                 break;
                             }
 
-                            //auto json_obj = json::parse(body);
-                            //std::cout << "line: " << __LINE__ << " json_obj[data][access_token]: " << json_obj["data"]["access_token"] << std::endl;
                             auto req = svc->restC().processResponse(out, body);
-                            ret = svc->tls().write(req);
-                            if(ret < 0) {
-                                break;
+                            if(req.length()) {
+                                ret = svc->tls().write(req);
+                                if(ret < 0) {
+                                    break;
+                                }
+                                std::cout << "line: " << __LINE__ << " request sent to : " << std::endl << req << std::endl;
                             }
-
-                            std::cout << "line: " << __LINE__ << " request sent to : " << req << std::endl;
 
                         }while(0);
                     }
@@ -532,16 +529,29 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                         auto& inst = m_services[serviceType];
                         auto IP = inst->ip();
                         auto PORT = inst->port();
+                        std::cout << "line: " << __LINE__ << " connection is closed for service: " << serviceType << std::endl;
                         DeRegisterFromEPoll(Fd);
                         CreateServiceAndRegisterToEPoll(serviceType, IP, PORT, true);
                     }
                     break;
+
                     case noor::ServiceType::Unix_Data_Store_Client_Service_Sync:
                     {
+                        std::cout << "line: " << __LINE__ << " connection is closed for service: " << serviceType << std::endl;
                         DeRegisterFromEPoll(Fd);
                         CreateServiceAndRegisterToEPoll(serviceType);
                     }
                     break;
+
+                    case noor::ServiceType::Tls_Tcp_Device_Rest_Client_Service_Sync:
+                    case noor::ServiceType::Tls_Tcp_Device_Rest_Client_Service_Async:
+                    {
+                        std::cout << "line: " << __LINE__ << " connection is closed for service: " << serviceType << std::endl;
+                        DeRegisterFromEPoll(Fd);
+                        CreateServiceAndRegisterToEPoll(serviceType);
+                    }
+                    break;
+
                     default:
                     {
                         //Connection is closed.
@@ -721,7 +731,7 @@ std::string noor::RestClient::processResponse(const std::string& http_header, co
     } else if(!uri.compare(0, 19, "/api/v1/register/db")) {
         std::cout << "line: " << __LINE__ << " response for register/db: " << http_body << std::endl;
     } else {
-        
+
     }
     return(std::string());
 }
