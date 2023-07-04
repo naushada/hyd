@@ -685,7 +685,7 @@ std::string noor::RestClient::registerDatapoints(const std::vector<std::string>&
     //clear the previous contents now.
     ss.str("");
     
-    std::cout << "line: " << __LINE__ << " json_: " << body << std::endl;
+    std::cout << "line: " << __LINE__ << " json: " << body << std::endl;
 
     ss << "POST " << uri <<" HTTP/1.1\r\n"
         << "Host: " << host << "\r\n"
@@ -719,7 +719,9 @@ std::string noor::RestClient::processResponse(const std::string& http_header, co
         return(registerDatapoints({{"net.cellular.simdb.common[].operator"}, {"net.cellular.simdb.common[].apn"}}));
 
     } else if(!uri.compare(0, 19, "/api/v1/register/db")) {
-        std::cout << "line: " << __LINE__ << " response for register/db" << std::endl;
+        std::cout << "line: " << __LINE__ << " response for register/db: " << http_body << std::endl;
+    } else {
+        
     }
     return(std::string());
 }
