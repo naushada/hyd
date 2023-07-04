@@ -677,9 +677,13 @@ std::string noor::RestClient::registerDatapoints(const std::vector<std::string>&
     }
     auto body = jarray.dump();
 
-    json jobject = json::object({"last", jarray});
+    ss << "{\"last\": " << body << "}";
+    //json jobject = json::object({"last", jarray});
     //json jobject{"last", body};
-    body = jobject.dump();
+    //body = jobject.dump();
+    body = ss.str();
+    //clear the previous contents now.
+    ss.str("");
     
     std::cout << "line: " << __LINE__ << " json_: " << body << std::endl;
 
