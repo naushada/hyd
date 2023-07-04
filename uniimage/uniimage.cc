@@ -735,7 +735,7 @@ std::string noor::RestClient::processResponse(const std::string& http_header, co
                 {"system.os"},
                 //Wan IP Address
                 {"net.interface.common[].ipv4.address"},
-                
+                {"net.interface.cellular[]"},
                 //WiFi Mode
                 {"net.interface.wifi[w1].radio.mode"},
                 {"net.interface.wifi[w2].radio.mode"},
