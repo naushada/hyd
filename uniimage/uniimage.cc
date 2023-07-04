@@ -688,15 +688,9 @@ std::string noor::RestClient::registerDatapoints(const std::vector<std::string>&
     auto body = jarray.dump();
 
     ss << "{\"last\": " << body << "}";
-    //json jobject = json::object({"last", jarray});
-    //json jobject{"last", body};
-    //body = jobject.dump();
     body = ss.str();
     //clear the previous contents now.
     ss.str("");
-    
-    std::cout << "line: " << __LINE__ << " json: " << body << std::endl;
-
     ss << "POST " << uri <<" HTTP/1.1\r\n"
         << "Host: " << host << "\r\n"
         << "Content-Type: application/vnd.api+json\r\n"
@@ -715,6 +709,8 @@ std::string noor::RestClient::buildRequest(const std::string& in, std::vector<st
 }
 
 std::string noor::RestClient::processResponse(const std::string& http_header, const std::string& http_body) {
+    std::cout << "line: " << __LINE__ << " header: " <<std::endl << http_header << " http_body: " << http_body << std::endl;
+
     if(!uri.compare(0, 19, "/api/v1/auth/tokens")) {
         json json_object = json::parse(http_body);
         cookies.assign(json_object["data"]["access_token"]);

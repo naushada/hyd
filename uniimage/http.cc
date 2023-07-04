@@ -135,19 +135,22 @@ void noor::Http::parse_header(const std::string& in)
     std::stringstream ss(header);
 
     while(!ss.eof()) {
-
       line_str.clear();
       std::getline(ss, line_str);
       offset = line_str.find_first_of(": ");
-      auto key = line_str.substr(0, offset);
-      auto value = line_str.substr(offset+2);
-      //getting rid of trailing \r\n
-      offset = value.find_first_of("\r\n");
-      value = value.substr(0, offset);
-      //std::cout <<"line: " << __LINE__ << " key: " << key << " value: " << value << std::endl;
-      if(!key.empty() && !value.empty()) {
-        add_element(key, value);
+
+      if(offset != std::string::npos) {
+        auto key = line_str.substr(0, offset);
+        auto value = line_str.substr(offset+2);
+        //getting rid of trailing \r\n
+        offset = value.find_first_of("\r\n");
+        value = value.substr(0, offset);
+        //std::cout <<"line: " << __LINE__ << " key: " << key << " value: " << value << std::endl;
+        if(!key.empty() && !value.empty()) {
+          add_element(key, value);
+        }
       }
+
     }
   }
 }
@@ -158,25 +161,21 @@ std::string noor::Http::get_header(const std::string& in)
   auto offset = in.find_last_of("\r\n\r\n", in.length(), 4);
   if(std::string::npos != offset) {
     header = in.substr(0, offset);
-    //std::cout << "line: " << __LINE__ << " HTTP Header " << header << std::endl;
     return(header);
   }
   
   return(std::string());
-
 }
 
 std::string noor::Http::get_body(const std::string& in)
 {
   auto header = get_header(in);
-  std::cout << "line: " << __LINE__ << " header.length() " << header.length() << std::endl;
   auto cl = value("Content-Length");
   if(!cl.length()) {
     return(std::string());
   }
 
   auto body = in.substr(header.length(), in.length() - header.length());
-  std::cout << "line: " << __LINE__ << " body length: " << body.length() << std::endl;
   return(body);
 }
 
