@@ -590,7 +590,7 @@ std::int32_t noor::Uniimage::DeRegisterFromEPoll(std::int32_t fd) {
     close(fd);
     if(it != m_evts.end()) {
         m_evts.erase(it);
-        //Release the ownerofunique_ptr now
+        //Release the owner of unique_ptr now
         m_services[serviceType].reset(nullptr);
         return(0);
     }
@@ -641,6 +641,13 @@ std::unique_ptr<noor::Service>& noor::Uniimage::GetService(noor::ServiceType ser
     return(m_services[serviceType]);
 }
 
+/******************************************************************************
+ _ __ ___  ___| |_ ___| (_) ___ _ __ | |_ 
+| '__/ _ \/ __| __/ __| | |/ _ \ '_ \| __|
+| | |  __/\__ \ || (__| | |  __/ | | | |_ 
+|_|  \___||___/\__\___|_|_|\___|_| |_|\__|
+                                          
+*********************************************************************************/
 std::string noor::RestClient::getToken(const std::string& in) {
     std::string host("192.168.1.1:443");
     std::stringstream ss("");
@@ -722,7 +729,31 @@ std::string noor::RestClient::processResponse(const std::string& http_header, co
         auto attmpts = json_object["data"]["attempts"].get<std::int32_t>();
         //auto attmpts = value;
         std::cout << "line: " << __LINE__ << " attempts: " << attmpts << std::endl;
-        return(registerDatapoints({{"net.cellular.simdb.common[].operator"}, {"net.cellular.simdb.common[].apn"}}));
+        return(registerDatapoints(
+            {
+                {"device"},
+                {"system.os"},
+                //WiFi Wan
+                {"net.interface.common[w1].ipv4.address"},
+                {"net.interface.common[w2].ipv4.address"},
+                {"net.interface.common[w3].ipv4.address"},
+                //Cellular Wan
+                {"net.interface.common[c2].ipv4.address"},
+                {"net.interface.common[c3].ipv4.address"},
+                {"net.interface.common[c4].ipv4.address"},
+                {"net.interface.common[c5].ipv4.address"},
+                //Ethernet Wan
+                {"net.interface.common[e1].ipv4.address"},
+                {"net.interface.common[e2].ipv4.address"},
+                //WiFi Mode
+                {"net.interface.wifi[w1].radio.mode"},
+                {"net.interface.wifi[w2].radio.mode"},
+                {"net.interface.wifi[w3].radio.mode"},
+                //Operator Name
+                {"net.cellular.simdb.common[].operator"}, 
+                {"net.cellular.simdb.common[].apn"},
+                {"system.bootcheck.signature"}
+            }));
 
     } else if(!uri.compare(0, 19, "/api/v1/register/db")) {
         std::cout << "line: " << __LINE__ << " response for register/db: " << http_body << std::endl;

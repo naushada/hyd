@@ -203,19 +203,15 @@ class noor::Tls {
 
             OpenSSL_add_all_algorithms();
             SSL_load_error_strings();
-            //m_method = std::make_unique<const SSL_METHOD>(SSLv23_client_method());
-            #if 0
-            m_method = SSLv23_client_method();
-            m_ssl_ctx = std::make_unique<SSL_CTX_new, decltype(&SSL_free)>(SSL_CTX_new(m_method), SSL_CTX_free);
-            m_ssl = std::make_unique<SSL_new, decltype(&SSL_free)>(SSL_new(m_ssl_ctx.get()), SSL_free);
-            #endif
             /* ---------------------------------------------------------- *
              * Disabling SSLv2 will leave v3 and TSLv1 for negotiation    *
              * ---------------------------------------------------------- */
             SSL_CTX_set_options(m_ssl_ctx.get(), SSL_OP_NO_SSLv2);
         }
 
-        ~Tls() = default;
+        ~Tls() {
+            
+        }
 
         std::int32_t init(std::int32_t fd) {
             std::int32_t rc = SSL_set_fd(m_ssl.get(), fd);
@@ -312,7 +308,6 @@ class noor::Tls {
         }
 
     private:
-        //std::unique_ptr<const SSL_METHOD> m_method;
         const SSL_METHOD *m_method;
         std::unique_ptr<SSL_CTX, decltype(&SSL_CTX_free)> m_ssl_ctx;
         std::unique_ptr<SSL, decltype(&SSL_free)> m_ssl;
