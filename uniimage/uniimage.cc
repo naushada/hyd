@@ -753,6 +753,15 @@ std::string noor::RestClient::processResponse(const std::string& http_header, co
         if(http_body.length()) {
             //Parse the json response
             json jobj = json::parse(http_body);
+
+            std::cout << "line: " <<__LINE__ << " jobj[data][net.interface.cellular[c4].imei] : " << jobj["data"]["net.interface.cellular[c4].imei"] << std::endl;
+            std::cout << "line: " <<__LINE__ << " jobj[data][net.interface.cellular[c5].imei] : " << jobj["data"]["net.interface.cellular[c5].imei"] << std::endl;
+            std::cout << "line: " <<__LINE__ << " jobj[data][device.product] : " << jobj["data"]["device.product"] << std::endl;
+            if(jobj["data"]["device.product"] != nullptr) {
+                std::cout << "line: " <<__LINE__ << " jobj[data][device.product] : " << jobj["data"]["device.product"] << std::endl;
+            }
+
+            #if 0
             for(auto it = jobj.begin(); it != jobj.end(); ++it) {
                 if(!it.key().compare("device.provisioning.serial") && it.value().is_string()) {
                     std::cout << "line: " << __LINE__ << " serialnumber: " << it.value() << std::endl;
@@ -770,6 +779,7 @@ std::string noor::RestClient::processResponse(const std::string& http_header, co
                     }
                 }
             }
+            #endif
         }
     } else {
 
