@@ -767,6 +767,21 @@ std::string noor::RestClient::processResponse(const std::string& http_header, co
 
 
             if(jobj["data"]["device.product"] != nullptr && !(jobj["data"]["device.product"].get<std::string>()).compare(0, 4, "XR90")) {
+                if(jobj["data"]["net.interface.cellular[c5].service"] != nullptr && 
+                    !(jobj["data"]["net.interface.cellular[c5].service"].get<std::string>()).compare(0, 9, "Available")) {
+                        svc->cache().insert(std::pair("imei", jobj["data"]["net.interface.cellular[c5].imei"].get<std::string>()));
+                        svc->cache().insert(std::pair("signalStrength", jobj["data"]["net.interface.cellular[c5].rssi"].get<std::string>()));
+                        svc->cache().insert(std::pair("apn", jobj["data"]["net.interface.cellular[c5].apninuse"].get<std::string>()));
+                        svc->cache().insert(std::pair("ipAddress", jobj["data"]["net.interface.common[c5].ipv4.address"].get<std::string>()));
+                        svc->cache().insert(std::pair("technology", jobj["data"]["net.interface.cellular[c5].technology.current"].get<std::string>()));
+                } else if(jobj["data"]["net.interface.cellular[c4].service"] != nullptr && 
+                    !(jobj["data"]["net.interface.cellular[c4].service"].get<std::string>()).compare(0, 9, "Available")) {
+                        svc->cache().insert(std::pair("imei", jobj["data"]["net.interface.cellular[c4].imei"].get<std::string>()));
+                        svc->cache().insert(std::pair("signalStrength", jobj["data"]["net.interface.cellular[c4].rssi"].get<std::string>()));
+                        svc->cache().insert(std::pair("apn", jobj["data"]["net.interface.cellular[c4].apninuse"].get<std::string>()));
+                        svc->cache().insert(std::pair("ipAddress", jobj["data"]["net.interface.common[c4].ipv4.address"].get<std::string>()));
+                        svc->cache().insert(std::pair("technology", jobj["data"]["net.interface.cellular[c4].technology.current"].get<std::string>()));
+                }
                 
                 std::cout << "line: " <<__LINE__ << " jobj[data][device.product] : " << jobj["data"]["device.product"] << std::endl;
                 std::cout << "line: " <<__LINE__ << " jobj[data][net.interface.cellular[c4].imei] : " << jobj["data"]["net.interface.cellular[c4].imei"] << std::endl;
@@ -775,6 +790,22 @@ std::string noor::RestClient::processResponse(const std::string& http_header, co
                 std::cout << "line: " <<__LINE__ << " jobj[data][net.interface.cellular[c4].bars] : " << jobj["data"]["net.interface.cellular[c4].bars"] << std::endl;
 
             } else if(jobj["data"]["device.product"] != nullptr && !(jobj["data"]["device.product"].get<std::string>()).compare(0, 4, "XR80")) {
+                if(jobj["data"]["net.interface.cellular[c2].service"] != nullptr && 
+                    !(jobj["data"]["net.interface.cellular[c2].service"].get<std::string>()).compare(0, 9, "Available")) {
+                        svc->cache().insert(std::pair("imei", jobj["data"]["net.interface.cellular[c2].imei"].get<std::string>()));
+                        svc->cache().insert(std::pair("signalStrength", jobj["data"]["net.interface.cellular[c2].rssi"].get<std::string>()));
+                        svc->cache().insert(std::pair("apn", jobj["data"]["net.interface.cellular[c2].apninuse"].get<std::string>()));
+                        svc->cache().insert(std::pair("ipAddress", jobj["data"]["net.interface.common[c2].ipv4.address"].get<std::string>()));
+                        svc->cache().insert(std::pair("technology", jobj["data"]["net.interface.cellular[c2].technology.current"].get<std::string>()));
+
+                } else if(jobj["data"]["net.interface.cellular[c3].service"] != nullptr && 
+                    !(jobj["data"]["net.interface.cellular[c3].service"].get<std::string>()).compare(0, 9, "Available")) {
+                        svc->cache().insert(std::pair("imei", jobj["data"]["net.interface.cellular[c3].imei"].get<std::string>()));
+                        svc->cache().insert(std::pair("signalStrength", jobj["data"]["net.interface.cellular[c3].rssi"].get<std::string>()));
+                        svc->cache().insert(std::pair("apn", jobj["data"]["net.interface.cellular[c3].apninuse"].get<std::string>()));
+                        svc->cache().insert(std::pair("ipAddress", jobj["data"]["net.interface.common[c3].ipv4.address"].get<std::string>()));
+                        svc->cache().insert(std::pair("technology", jobj["data"]["net.interface.cellular[c3].technology.current"].get<std::string>()));
+                }
                 std::cout << "line: " <<__LINE__ << " jobj[data][device.product] : " << jobj["data"]["device.product"] << std::endl;
                 std::cout << "line: " <<__LINE__ << " jobj[data][net.interface.cellular[c3].imei] : " << jobj["data"]["net.interface.cellular[c3].imei"] << std::endl;
                 std::cout << "line: " <<__LINE__ << " jobj[data][net.interface.cellular[c4].imei] : " << jobj["data"]["net.interface.cellular[c4].imei"] << std::endl;
@@ -785,7 +816,12 @@ std::string noor::RestClient::processResponse(const std::string& http_header, co
                 std::cout << "line: " <<__LINE__ << " jobj[data][device.product] : " << jobj["data"]["device.product"] << std::endl;
                 std::cout << "line: " <<__LINE__ << " jobj[data][net.interface.cellular[c4].imei] : " << jobj["data"]["net.interface.cellular[c1].imei"] << std::endl;
                 std::cout << "line: " <<__LINE__ << " jobj[data][net.interface.cellular[c5].bars] : " << jobj["data"]["net.interface.cellular[c1].bars"] << std::endl;
-                
+                svc->cache().insert(std::pair("imei", jobj["data"]["net.interface.cellular[c1].imei"].get<std::string>()));
+                svc->cache().insert(std::pair("signalStrength", jobj["data"]["net.interface.cellular[c1].rssi"].get<std::string>()));
+                svc->cache().insert(std::pair("apn", jobj["data"]["net.interface.cellular[c1].apninuse"].get<std::string>()));
+                svc->cache().insert(std::pair("ipAddress", jobj["data"]["net.interface.common[c1].ipv4.address"].get<std::string>()));
+                svc->cache().insert(std::pair("technology", jobj["data"]["net.interface.cellular[c1].technology.current"].get<std::string>()));
+
             }
 
             #if 0
