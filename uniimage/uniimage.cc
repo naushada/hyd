@@ -757,13 +757,35 @@ std::string noor::RestClient::processResponse(const std::string& http_header, co
             //std::cout << "line: " <<__LINE__ << " jobj[data][net.interface.cellular[c4].imei] : " << jobj["data"]["net.interface.cellular[c4].imei"] << std::endl;
             //std::cout << "line: " <<__LINE__ << " jobj[data][net.interface.cellular[c5].imei] : " << jobj["data"]["net.interface.cellular[c5].imei"] << std::endl;
             //std::cout << "line: " <<__LINE__ << " jobj[data][device.product] : " << jobj["data"]["device.product"] << std::endl;
-            std::cout << "line: " <<__LINE__ << " jobj[data][device.product].get<std::string>() : " << jobj["data"]["device.product"].get<std::string>() << std::endl;
+            //std::cout << "line: " <<__LINE__ << " jobj[data][device.product].get<std::string>() : " << jobj["data"]["device.product"].get<std::string>() << std::endl;
+
+            svc->cache().insert(std::pair("model", jobj["data"]["device.product"].get<std::string>()));
+            svc->cache().insert(std::pair("serialNumber", jobj["data"]["device.provisioning.serial"].get<std::string>()));
+            svc->cache().insert(std::pair("osVersion", jobj["data"]["system.os.version"].get<std::string>()));
+            svc->cache().insert(std::pair("osBuildNumber", jobj["data"]["system.os.buildnumber"].get<std::string>()));
+            svc->cache().insert(std::pair("firmwareName", jobj["data"]["system.os.name"].get<std::string>()));
+
+
             if(jobj["data"]["device.product"] != nullptr && !(jobj["data"]["device.product"].get<std::string>()).compare(0, 4, "XR90")) {
+                
                 std::cout << "line: " <<__LINE__ << " jobj[data][device.product] : " << jobj["data"]["device.product"] << std::endl;
                 std::cout << "line: " <<__LINE__ << " jobj[data][net.interface.cellular[c4].imei] : " << jobj["data"]["net.interface.cellular[c4].imei"] << std::endl;
                 std::cout << "line: " <<__LINE__ << " jobj[data][net.interface.cellular[c5].imei] : " << jobj["data"]["net.interface.cellular[c5].imei"] << std::endl;
                 std::cout << "line: " <<__LINE__ << " jobj[data][net.interface.cellular[c5].bars] : " << jobj["data"]["net.interface.cellular[c5].bars"] << std::endl;
                 std::cout << "line: " <<__LINE__ << " jobj[data][net.interface.cellular[c4].bars] : " << jobj["data"]["net.interface.cellular[c4].bars"] << std::endl;
+
+            } else if(jobj["data"]["device.product"] != nullptr && !(jobj["data"]["device.product"].get<std::string>()).compare(0, 4, "XR80")) {
+                std::cout << "line: " <<__LINE__ << " jobj[data][device.product] : " << jobj["data"]["device.product"] << std::endl;
+                std::cout << "line: " <<__LINE__ << " jobj[data][net.interface.cellular[c3].imei] : " << jobj["data"]["net.interface.cellular[c3].imei"] << std::endl;
+                std::cout << "line: " <<__LINE__ << " jobj[data][net.interface.cellular[c4].imei] : " << jobj["data"]["net.interface.cellular[c4].imei"] << std::endl;
+                std::cout << "line: " <<__LINE__ << " jobj[data][net.interface.cellular[c3].bars] : " << jobj["data"]["net.interface.cellular[c3].bars"] << std::endl;
+                std::cout << "line: " <<__LINE__ << " jobj[data][net.interface.cellular[c4].bars] : " << jobj["data"]["net.interface.cellular[c4].bars"] << std::endl;
+
+            } else if(jobj["data"]["device.product"] != nullptr && !(jobj["data"]["device.product"].get<std::string>()).compare(0, 4, "RX55")) {
+                std::cout << "line: " <<__LINE__ << " jobj[data][device.product] : " << jobj["data"]["device.product"] << std::endl;
+                std::cout << "line: " <<__LINE__ << " jobj[data][net.interface.cellular[c4].imei] : " << jobj["data"]["net.interface.cellular[c1].imei"] << std::endl;
+                std::cout << "line: " <<__LINE__ << " jobj[data][net.interface.cellular[c5].bars] : " << jobj["data"]["net.interface.cellular[c1].bars"] << std::endl;
+                
             }
 
             #if 0
