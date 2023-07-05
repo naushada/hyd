@@ -765,7 +765,6 @@ std::string noor::RestClient::processResponse(const std::string& http_header, co
             svc->cache().insert(std::pair("osBuildNumber", jobj["data"]["system.os.buildnumber"].get<std::string>()));
             svc->cache().insert(std::pair("firmwareName", jobj["data"]["system.os.name"].get<std::string>()));
 
-
             if(jobj["data"]["device.product"] != nullptr && !(jobj["data"]["device.product"].get<std::string>()).compare(0, 4, "XR90")) {
                 if(jobj["data"]["net.interface.cellular[c5].service"] != nullptr && 
                     !(jobj["data"]["net.interface.cellular[c5].service"].get<std::string>()).compare(0, 9, "Available")) {
@@ -829,31 +828,13 @@ std::string noor::RestClient::processResponse(const std::string& http_header, co
                 svc->cache().insert(std::pair("carrier", jobj["data"]["net.interface.cellular[c1].operator"].get<std::string>()));
 
             }
+
             json ind = json::object();
             for(const auto& ent: svc->cache()) {
                 ind[ent.first] = ent.second;
             }
             
             std::cout << "line: " << __LINE__ << " value: " << ind.dump() << std::endl;
-            #if 0
-            for(auto it = jobj.begin(); it != jobj.end(); ++it) {
-                if(!it.key().compare("device.provisioning.serial") && it.value().is_string()) {
-                    std::cout << "line: " << __LINE__ << " serialnumber: " << it.value() << std::endl;
-                    svc->cache().insert(std::pair("serialNumber", it.value()));
-                } else if(!it.key().compare("device.product") && it.value().is_string()) {
-                    //check for its value --- XR90 (c1, c4 and c5), XR80 (c1, c2 and c3), RX55
-                    if(!it.value().get<std::string>().compare("XR90")) {
-                        //look for c1, c4 and c5
-                        std::cout << "line: " <<__LINE__ << " jobj[data][net.interface.cellular[c4].imei] : " << jobj["data"]["net.interface.cellular[c4].imei"] << std::endl;
-                        std::cout << "line: " <<__LINE__ << " jobj[data][net.interface.cellular[c5].imei] : " << jobj["data"]["net.interface.cellular[c5].imei"] << std::endl;
-                    } else if(!it.value().get<std::string>().compare("XR80")) {
-                        //look for c1, c2 and c3
-                    } else if(!it.value().get<std::string>().compare("RX55")) {
-                        //look for c
-                    }
-                }
-            }
-            #endif
         }
     } else {
 
