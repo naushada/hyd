@@ -757,7 +757,7 @@ std::string noor::RestClient::processResponse(const std::string& http_header, co
             //std::cout << "line: " <<__LINE__ << " jobj[data][net.interface.cellular[c4].imei] : " << jobj["data"]["net.interface.cellular[c4].imei"] << std::endl;
             //std::cout << "line: " <<__LINE__ << " jobj[data][net.interface.cellular[c5].imei] : " << jobj["data"]["net.interface.cellular[c5].imei"] << std::endl;
             //std::cout << "line: " <<__LINE__ << " jobj[data][device.product] : " << jobj["data"]["device.product"] << std::endl;
-            if(jobj["data"]["device.product"] != nullptr && !(jobj["data"]["device.product"].get<std::string>()).compare(0, 6, "\"XR90\"")) {
+            if(jobj["data"]["device.product"] != nullptr && jobj["data"]["device.product"].get<std::string>() == "\"XR90\"") {
                 std::cout << "line: " <<__LINE__ << " jobj[data][device.product] : " << jobj["data"]["device.product"] << std::endl;
                 std::cout << "line: " <<__LINE__ << " jobj[data][net.interface.cellular[c4].imei] : " << jobj["data"]["net.interface.cellular[c4].imei"] << std::endl;
                 std::cout << "line: " <<__LINE__ << " jobj[data][net.interface.cellular[c5].imei] : " << jobj["data"]["net.interface.cellular[c5].imei"] << std::endl;
