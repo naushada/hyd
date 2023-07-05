@@ -499,7 +499,7 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                                 break;
                             }
 
-                            auto req = svc->restC().processResponse(out, body);
+                            auto req = svc->restC().processResponse(out, body, svc);
                             if(req.length()) {
                                 ret = svc->tls().write(req);
                                 if(ret < 0) {
@@ -715,7 +715,7 @@ std::string noor::RestClient::buildRequest(const std::string& in, std::vector<st
     return(std::string());
 }
 
-std::string noor::RestClient::processResponse(const std::string& http_header, const std::string& http_body) {
+std::string noor::RestClient::processResponse(const std::string& http_header, const std::string& http_body, auto& svc) {
     std::cout << "line: " << __LINE__ << " header: " <<std::endl << http_header << " http_body: " << http_body << std::endl;
 
     if(!uri.compare(0, 19, "/api/v1/auth/tokens")) {
@@ -735,7 +735,9 @@ std::string noor::RestClient::processResponse(const std::string& http_header, co
                 {"system.os"},
                 //Wan IP Address
                 {"net.interface.common[].ipv4.address"},
-                {"net.interface.cellular[]"},
+                {"net.interface.cellular[].imei"},
+                {"net.interface.cellular[].bars"},
+                {"net.interface.cellular[].technology.current"},
                 //WiFi Mode
                 {"net.interface.wifi[w1].radio.mode"},
                 {"net.interface.wifi[w2].radio.mode"},
@@ -747,7 +749,28 @@ std::string noor::RestClient::processResponse(const std::string& http_header, co
             }));
 
     } else if(!uri.compare(0, 19, "/api/v1/register/db")) {
-        std::cout << "line: " << __LINE__ << " response for register/db: " << http_body << std::endl;
+        //std::cout << "line: " << __LINE__ << " response for register/db: " << http_body << std::endl;
+        if(http_body.length()) {
+            //Parse the json response
+            json jobj = json::parse(http_body);
+            for(auto it = jobj.begin(); it != jobj.end(); ++it) {
+                if(!it.key().compare("device.provisioning.serial") && it.value().is_string()) {
+                    std::cout << "line: " << __LINE__ << " serialnumber: " << it.value() << std::endl;
+                    svc->cache().insert(std::pair("serialNumber", it.value()));
+                } else if(!it.key().compare("device.product") && it.value().is_string()) {
+                    //check for its value --- XR90 (c1, c4 and c5), XR80 (c1, c2 and c3), RX55
+                    if(!it.value().get<std::string>().compare("XR90")) {
+                        //look for c1, c4 and c5
+                        std::cout << "line: " <<__LINE__ << " jobj[data][net.interface.cellular[c4].imei] : " << jobj["data"]["net.interface.cellular[c4].imei"] << std::endl;
+                        std::cout << "line: " <<__LINE__ << " jobj[data][net.interface.cellular[c5].imei] : " << jobj["data"]["net.interface.cellular[c5].imei"] << std::endl;
+                    } else if(!it.value().get<std::string>().compare("XR80")) {
+                        //look for c1, c2 and c3
+                    } else if(!it.value().get<std::string>().compare("RX55")) {
+                        //look for c
+                    }
+                }
+            }
+        }
     } else {
 
     }

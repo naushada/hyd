@@ -336,7 +336,7 @@ class noor::RestClient {
         std::string authorizeToken(const std::string& in, const std::string& user);
         std::string registerDatapoints(const std::vector<std::string>& dps);
         std::string buildRequest(const std::string& in, std::vector<std::string> param = {});
-        std::string processResponse(const std::string& http_header, const std::string& http_body);
+        std::string processResponse(const std::string& http_header, const std::string& http_body, auto &svc);
 
     private:
         std::string cookies;
@@ -536,6 +536,10 @@ class noor::Service {
             return(m_restC);
         }
 
+        auto& cache() {
+            return(m_cache);
+        }
+
     private:
         std::atomic<std::uint16_t> m_message_id;
         bool m_is_register_variable;
@@ -560,6 +564,7 @@ class noor::Service {
         std::vector<struct epoll_event> m_epoll_evts;
         noor::Tls m_tls;
         noor::RestClient m_restC;
+        std::unordered_map<std::string, std::string> m_cache;
 };
 
 class TcpClient: public noor::Service {
