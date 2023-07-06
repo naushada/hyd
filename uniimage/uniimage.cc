@@ -1015,15 +1015,15 @@ int main(std::int32_t argc, char *argv[]) {
         inst.CreateServiceAndRegisterToEPoll(noor::ServiceType::Tcp_Device_Console_Client_Service_Async, config["server-ip"], consolePort, true);
         //inst.CreateServiceAndRegisterToEPoll(noor::ServiceType::Tcp_Web_Client_Proxy_Service, bridgeIP, httpPort, false);
         inst.CreateServiceAndRegisterToEPoll(noor::ServiceType::Tls_Tcp_Device_Rest_Client_Service_Sync, bridgeIP, httpsPort, false);
+        #if 0
         inst.CreateServiceAndRegisterToEPoll(noor::ServiceType::Unix_Data_Store_Client_Service_Sync);
-
         auto& ent = inst.GetService(noor::ServiceType::Unix_Data_Store_Client_Service_Sync);
-
         ent->getVariable("device", {{"machine"}, {"product"}, {"provisioning.serial"}});
         ent->getVariable("net.interface.wifi[]", {{"radio.mode"}, {"mac"},{"ap.ssid"}}, {{"radio.mode__eq\": \"sta"}});
         ent->getVariable("net.interface.common[]", {{"ipv4.address"}, {"ipv4.connectivity"}, {"ipv4.prefixlength"}});
         ent->getVariable("system.os", {{"version"}, {"buildnumber"}, {"name"}});
         ent->getVariable("system.bootcheck.signature");
+        #endif
         #if 0
         std::vector<const std::string> dp_list = {
             {"device.machine"},
