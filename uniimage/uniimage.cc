@@ -499,8 +499,12 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                                 break;
                             }
 
-                            auto req = svc->restC().processResponse(out, body, svc);
-                            if(req.length()) {
+                            std::string result("");
+                            auto req = svc->restC().processResponse(out, body, result);
+                            if(result.length()) {
+                                //push result to remote server
+                                
+                            } else if(req.length()) {
                                 ret = svc->tls().write(req);
                                 if(ret < 0) {
                                     break;
@@ -695,9 +699,8 @@ std::string noor::RestClient::registerDatapoints(const std::vector<std::string>&
     auto body = jarray.dump();
     json jobj = json::object();
     jobj["last"] = jarray;
-
-    //ss << "{\"last\": " << body << "}";
     body = jobj.dump();
+
     //clear the previous contents now.
     ss.str("");
     ss << "POST " << uri <<" HTTP/1.1\r\n"
@@ -717,7 +720,7 @@ std::string noor::RestClient::buildRequest(const std::string& in, std::vector<st
     return(std::string());
 }
 
-std::string noor::RestClient::processResponse(const std::string& http_header, const std::string& http_body, auto& svc) {
+std::string noor::RestClient::processResponse(const std::string& http_header, const std::string& http_body, std::string& result) {
     std::cout << "line: " << __LINE__ << " header: " <<std::endl << http_header << " http_body: " << http_body << std::endl;
 
     if(!uri.compare(0, 19, "/api/v1/auth/tokens")) {
@@ -746,92 +749,75 @@ std::string noor::RestClient::processResponse(const std::string& http_header, co
             }));
 
     } else if(!uri.compare(0, 19, "/api/v1/register/db")) {
-        //std::cout << "line: " << __LINE__ << " response for register/db: " << http_body << std::endl;
+        std::unordered_map<std::string, std::string> cache;
+
         if(http_body.length()) {
             //Parse the json response
             json jobj = json::parse(http_body);
 
-            //std::cout << "line: " <<__LINE__ << " jobj[data][net.interface.cellular[c4].imei] : " << jobj["data"]["net.interface.cellular[c4].imei"] << std::endl;
-            //std::cout << "line: " <<__LINE__ << " jobj[data][net.interface.cellular[c5].imei] : " << jobj["data"]["net.interface.cellular[c5].imei"] << std::endl;
-            //std::cout << "line: " <<__LINE__ << " jobj[data][device.product] : " << jobj["data"]["device.product"] << std::endl;
-            //std::cout << "line: " <<__LINE__ << " jobj[data][device.product].get<std::string>() : " << jobj["data"]["device.product"].get<std::string>() << std::endl;
-
-            svc->cache().insert(std::pair("model", jobj["data"]["device.product"].get<std::string>()));
-            svc->cache().insert(std::pair("serialNumber", jobj["data"]["device.provisioning.serial"].get<std::string>()));
-            svc->cache().insert(std::pair("osVersion", jobj["data"]["system.os.version"].get<std::string>()));
-            svc->cache().insert(std::pair("osBuildNumber", jobj["data"]["system.os.buildnumber"].get<std::string>()));
-            svc->cache().insert(std::pair("firmwareName", jobj["data"]["system.os.name"].get<std::string>()));
+            cache.insert(std::pair("model", jobj["data"]["device.product"].get<std::string>()));
+            cache.insert(std::pair("serialNumber", jobj["data"]["device.provisioning.serial"].get<std::string>()));
+            cache.insert(std::pair("osVersion", jobj["data"]["system.os.version"].get<std::string>()));
+            cache.insert(std::pair("osBuildNumber", jobj["data"]["system.os.buildnumber"].get<std::string>()));
+            cache.insert(std::pair("firmwareName", jobj["data"]["system.os.name"].get<std::string>()));
 
             if(jobj["data"]["device.product"] != nullptr && !(jobj["data"]["device.product"].get<std::string>()).compare(0, 4, "XR90")) {
                 if(jobj["data"]["net.interface.cellular[c5].service"] != nullptr && 
                     !(jobj["data"]["net.interface.cellular[c5].service"].get<std::string>()).compare(0, 9, "Available")) {
-                        svc->cache().insert(std::pair("imei", jobj["data"]["net.interface.cellular[c5].imei"].get<std::string>()));
-                        svc->cache().insert(std::pair("signalStrength", std::to_string(jobj["data"]["net.interface.cellular[c5].rssi"].get<std::int32_t>())));
-                        svc->cache().insert(std::pair("apn", jobj["data"]["net.interface.cellular[c5].apninuse"].get<std::string>()));
-                        svc->cache().insert(std::pair("ipAddress", jobj["data"]["net.interface.common[c5].ipv4.address"].get<std::string>()));
-                        svc->cache().insert(std::pair("technology", jobj["data"]["net.interface.cellular[c5].technology.current"].get<std::string>()));
-                        svc->cache().insert(std::pair("carrier", jobj["data"]["net.interface.cellular[c5].operator"].get<std::string>()));
+                        cache.insert(std::pair("imei", jobj["data"]["net.interface.cellular[c5].imei"].get<std::string>()));
+                        cache.insert(std::pair("signalStrength", std::to_string(jobj["data"]["net.interface.cellular[c5].rssi"].get<std::int32_t>())));
+                        cache.insert(std::pair("apn", jobj["data"]["net.interface.cellular[c5].apninuse"].get<std::string>()));
+                        cache.insert(std::pair("ipAddress", jobj["data"]["net.interface.common[c5].ipv4.address"].get<std::string>()));
+                        cache.insert(std::pair("technology", jobj["data"]["net.interface.cellular[c5].technology.current"].get<std::string>()));
+                        cache.insert(std::pair("carrier", jobj["data"]["net.interface.cellular[c5].operator"].get<std::string>()));
 
                 } else if(jobj["data"]["net.interface.cellular[c4].service"] != nullptr && 
                     !(jobj["data"]["net.interface.cellular[c4].service"].get<std::string>()).compare(0, 9, "Available")) {
-                        svc->cache().insert(std::pair("imei", jobj["data"]["net.interface.cellular[c4].imei"].get<std::string>()));
-                        svc->cache().insert(std::pair("signalStrength", std::to_string(jobj["data"]["net.interface.cellular[c4].rssi"].get<std::int32_t>())));
-                        svc->cache().insert(std::pair("apn", jobj["data"]["net.interface.cellular[c4].apninuse"].get<std::string>()));
-                        svc->cache().insert(std::pair("ipAddress", jobj["data"]["net.interface.common[c4].ipv4.address"].get<std::string>()));
-                        svc->cache().insert(std::pair("technology", jobj["data"]["net.interface.cellular[c4].technology.current"].get<std::string>()));
-                        svc->cache().insert(std::pair("carrier", jobj["data"]["net.interface.cellular[c4].operator"].get<std::string>()));
+                        cache.insert(std::pair("imei", jobj["data"]["net.interface.cellular[c4].imei"].get<std::string>()));
+                        cache.insert(std::pair("signalStrength", std::to_string(jobj["data"]["net.interface.cellular[c4].rssi"].get<std::int32_t>())));
+                        cache.insert(std::pair("apn", jobj["data"]["net.interface.cellular[c4].apninuse"].get<std::string>()));
+                        cache.insert(std::pair("ipAddress", jobj["data"]["net.interface.common[c4].ipv4.address"].get<std::string>()));
+                        cache.insert(std::pair("technology", jobj["data"]["net.interface.cellular[c4].technology.current"].get<std::string>()));
+                        cache.insert(std::pair("carrier", jobj["data"]["net.interface.cellular[c4].operator"].get<std::string>()));
                 }
-                
-                std::cout << "line: " <<__LINE__ << " jobj[data][device.product] : " << jobj["data"]["device.product"] << std::endl;
-                std::cout << "line: " <<__LINE__ << " jobj[data][net.interface.cellular[c4].imei] : " << jobj["data"]["net.interface.cellular[c4].imei"] << std::endl;
-                std::cout << "line: " <<__LINE__ << " jobj[data][net.interface.cellular[c5].imei] : " << jobj["data"]["net.interface.cellular[c5].imei"] << std::endl;
-                std::cout << "line: " <<__LINE__ << " jobj[data][net.interface.cellular[c5].bars] : " << jobj["data"]["net.interface.cellular[c5].bars"] << std::endl;
-                std::cout << "line: " <<__LINE__ << " jobj[data][net.interface.cellular[c4].bars] : " << jobj["data"]["net.interface.cellular[c4].bars"] << std::endl;
 
             } else if(jobj["data"]["device.product"] != nullptr && !(jobj["data"]["device.product"].get<std::string>()).compare(0, 4, "XR80")) {
                 if(jobj["data"]["net.interface.cellular[c2].service"] != nullptr && 
                     !(jobj["data"]["net.interface.cellular[c2].service"].get<std::string>()).compare(0, 9, "Available")) {
-                        svc->cache().insert(std::pair("imei", jobj["data"]["net.interface.cellular[c2].imei"].get<std::string>()));
-                        svc->cache().insert(std::pair("signalStrength", std::to_string(jobj["data"]["net.interface.cellular[c2].rssi"].get<std::int32_t>())));
-                        svc->cache().insert(std::pair("apn", jobj["data"]["net.interface.cellular[c2].apninuse"].get<std::string>()));
-                        svc->cache().insert(std::pair("ipAddress", jobj["data"]["net.interface.common[c2].ipv4.address"].get<std::string>()));
-                        svc->cache().insert(std::pair("technology", jobj["data"]["net.interface.cellular[c2].technology.current"].get<std::string>()));
-                        svc->cache().insert(std::pair("carrier", jobj["data"]["net.interface.cellular[c2].operator"].get<std::string>()));
+                        cache.insert(std::pair("imei", jobj["data"]["net.interface.cellular[c2].imei"].get<std::string>()));
+                        cache.insert(std::pair("signalStrength", std::to_string(jobj["data"]["net.interface.cellular[c2].rssi"].get<std::int32_t>())));
+                        cache.insert(std::pair("apn", jobj["data"]["net.interface.cellular[c2].apninuse"].get<std::string>()));
+                        cache.insert(std::pair("ipAddress", jobj["data"]["net.interface.common[c2].ipv4.address"].get<std::string>()));
+                        cache.insert(std::pair("technology", jobj["data"]["net.interface.cellular[c2].technology.current"].get<std::string>()));
+                        cache.insert(std::pair("carrier", jobj["data"]["net.interface.cellular[c2].operator"].get<std::string>()));
 
                 } else if(jobj["data"]["net.interface.cellular[c3].service"] != nullptr && 
                     !(jobj["data"]["net.interface.cellular[c3].service"].get<std::string>()).compare(0, 9, "Available")) {
-                        svc->cache().insert(std::pair("imei", jobj["data"]["net.interface.cellular[c3].imei"].get<std::string>()));
-                        svc->cache().insert(std::pair("signalStrength", std::to_string(jobj["data"]["net.interface.cellular[c3].rssi"].get<std::int32_t>())));
-                        svc->cache().insert(std::pair("apn", jobj["data"]["net.interface.cellular[c3].apninuse"].get<std::string>()));
-                        svc->cache().insert(std::pair("ipAddress", jobj["data"]["net.interface.common[c3].ipv4.address"].get<std::string>()));
-                        svc->cache().insert(std::pair("technology", jobj["data"]["net.interface.cellular[c3].technology.current"].get<std::string>()));
-                        svc->cache().insert(std::pair("carrier", jobj["data"]["net.interface.cellular[c3].operator"].get<std::string>()));
+                        cache.insert(std::pair("imei", jobj["data"]["net.interface.cellular[c3].imei"].get<std::string>()));
+                        cache.insert(std::pair("signalStrength", std::to_string(jobj["data"]["net.interface.cellular[c3].rssi"].get<std::int32_t>())));
+                        cache.insert(std::pair("apn", jobj["data"]["net.interface.cellular[c3].apninuse"].get<std::string>()));
+                        cache.insert(std::pair("ipAddress", jobj["data"]["net.interface.common[c3].ipv4.address"].get<std::string>()));
+                        cache.insert(std::pair("technology", jobj["data"]["net.interface.cellular[c3].technology.current"].get<std::string>()));
+                        cache.insert(std::pair("carrier", jobj["data"]["net.interface.cellular[c3].operator"].get<std::string>()));
                 }
-                std::cout << "line: " <<__LINE__ << " jobj[data][device.product] : " << jobj["data"]["device.product"] << std::endl;
-                std::cout << "line: " <<__LINE__ << " jobj[data][net.interface.cellular[c3].imei] : " << jobj["data"]["net.interface.cellular[c3].imei"] << std::endl;
-                std::cout << "line: " <<__LINE__ << " jobj[data][net.interface.cellular[c4].imei] : " << jobj["data"]["net.interface.cellular[c4].imei"] << std::endl;
-                std::cout << "line: " <<__LINE__ << " jobj[data][net.interface.cellular[c3].bars] : " << jobj["data"]["net.interface.cellular[c3].bars"] << std::endl;
-                std::cout << "line: " <<__LINE__ << " jobj[data][net.interface.cellular[c4].bars] : " << jobj["data"]["net.interface.cellular[c4].bars"] << std::endl;
 
             } else if(jobj["data"]["device.product"] != nullptr && !(jobj["data"]["device.product"].get<std::string>()).compare(0, 4, "RX55")) {
-                std::cout << "line: " <<__LINE__ << " jobj[data][device.product] : " << jobj["data"]["device.product"] << std::endl;
-                std::cout << "line: " <<__LINE__ << " jobj[data][net.interface.cellular[c4].imei] : " << jobj["data"]["net.interface.cellular[c1].imei"] << std::endl;
-                std::cout << "line: " <<__LINE__ << " jobj[data][net.interface.cellular[c5].bars] : " << jobj["data"]["net.interface.cellular[c1].bars"] << std::endl;
-                svc->cache().insert(std::pair("imei", jobj["data"]["net.interface.cellular[c1].imei"].get<std::string>()));
-                svc->cache().insert(std::pair("signalStrength", std::to_string(jobj["data"]["net.interface.cellular[c1].rssi"].get<std::int32_t>())));
-                svc->cache().insert(std::pair("apn", jobj["data"]["net.interface.cellular[c1].apninuse"].get<std::string>()));
-                svc->cache().insert(std::pair("ipAddress", jobj["data"]["net.interface.common[c1].ipv4.address"].get<std::string>()));
-                svc->cache().insert(std::pair("technology", jobj["data"]["net.interface.cellular[c1].technology.current"].get<std::string>()));
-                svc->cache().insert(std::pair("carrier", jobj["data"]["net.interface.cellular[c1].operator"].get<std::string>()));
+                cache.insert(std::pair("imei", jobj["data"]["net.interface.cellular[c1].imei"].get<std::string>()));
+                cache.insert(std::pair("signalStrength", std::to_string(jobj["data"]["net.interface.cellular[c1].rssi"].get<std::int32_t>())));
+                cache.insert(std::pair("apn", jobj["data"]["net.interface.cellular[c1].apninuse"].get<std::string>()));
+                cache.insert(std::pair("ipAddress", jobj["data"]["net.interface.common[c1].ipv4.address"].get<std::string>()));
+                cache.insert(std::pair("technology", jobj["data"]["net.interface.cellular[c1].technology.current"].get<std::string>()));
+                cache.insert(std::pair("carrier", jobj["data"]["net.interface.cellular[c1].operator"].get<std::string>()));
 
             }
 
             json ind = json::object();
-            for(const auto& ent: svc->cache()) {
+            for(const auto& ent: cache) {
                 ind[ent.first] = ent.second;
             }
-            
             std::cout << "line: " << __LINE__ << " value: " << ind.dump() << std::endl;
+
+            result.assign(ind.dump());
         }
     } else {
 

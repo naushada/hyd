@@ -336,7 +336,7 @@ class noor::RestClient {
         std::string authorizeToken(const std::string& in, const std::string& user);
         std::string registerDatapoints(const std::vector<std::string>& dps);
         std::string buildRequest(const std::string& in, std::vector<std::string> param = {});
-        std::string processResponse(const std::string& http_header, const std::string& http_body, auto &svc);
+        std::string processResponse(const std::string& http_header, const std::string& http_body, std::string &svc);
 
     private:
         std::string cookies;
