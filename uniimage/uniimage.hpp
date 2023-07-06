@@ -158,17 +158,18 @@ class noor::Uniimage {
         std::int32_t init();
 
         auto& getResponseCache() {
-            return(m_deviceRspCache);
+            return(m_cache);
         }
 
-        Uniimage() : m_epollFd(), m_evts(), m_services(), m_deviceRspCache() {}
+        Uniimage() : m_epollFd(), m_evts(), m_services(), m_cache() {}
         ~Uniimage() = default;
 
     private:
         std::int32_t m_epollFd;
         std::vector<struct epoll_event> m_evts;
         std::unordered_map<noor::ServiceType, std::unique_ptr<noor::Service>> m_services;
-        std::unordered_map<std::string, std::vector<std::string>> m_deviceRspCache;
+        //The key is serial number of device. and value is json object.
+        std::unordered_map<std::string, std::string> m_cache;
 };
 
 class noor::CommonResponse {

@@ -408,22 +408,22 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                         }
                         #endif
 
-                        if(!m_deviceRspCache.size()) {
+                        if(!m_cache.size()) {
                             for(auto it = json_obj.begin(); it != json_obj.end(); ++it) {
                                 if(!it.key().compare("device.provisioning.serial") && it.value().is_string()) {
                                     std::cout << "line: " << __LINE__ << " serialnumber: " << it.value() << std::endl;
                                     std::vector<std::string> rsp;
                                     rsp.push_back(result.m_response);
-                                    m_deviceRspCache[it.value()] = rsp;
+                                    //m_cache[it.value()] = rsp;
                                 }
                             }
                         } else {
-                            m_deviceRspCache.begin()->second.push_back(result.m_response);
-                            std::cout << "line: " << __LINE__ << " number of elements: " << m_deviceRspCache.begin()->second.size() << std::endl;
-                            for(const auto&ent: m_deviceRspCache.begin()->second) {
+                            //m_cache.begin()->second.push_back(result.m_response);
+                            std::cout << "line: " << __LINE__ << " number of elements: " << m_cache.begin()->second.size() << std::endl;
+                            for(const auto&ent: m_cache.begin()->second) {
                                 std::cout << "line: " << __LINE__ << " m_devideRspCache: " << ent <<std::endl;
                             }
-                            if(5 == m_deviceRspCache.begin()->second.size()) {
+                            if(5 == m_cache.begin()->second.size()) {
                                 auto &svc = GetService(noor::ServiceType::Tcp_Device_Client_Service_Async);
                                 if(noor::client_connection::Connected == svc->connected_client(svc->handle())) {
                                     //Push to Device Management Server
