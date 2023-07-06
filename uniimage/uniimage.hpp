@@ -648,7 +648,7 @@ class TcpServer: public noor::Service {
                 sIP.assign(it->second);
             }
 
-            if(noor::ServiceType::Tcp_Device_Server_Service == svcType) {
+            if(noor::ServiceType::Tcp_Device_Console_Server_Service == svcType) {
                 tcp_server(sIP, 65344);    
             } else {
                 tcp_server(sIP, std::stoi(get_config().at("server-port")));
