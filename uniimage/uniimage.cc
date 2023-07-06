@@ -394,8 +394,11 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                                 for(const auto& ent: getResponseCache()) {
                                     jarray.push_back(ent.second);
                                 }
+                                
                                 if(!jarray.empty()) {
-                                    body = jarray.dump();
+                                    json jobj = json::object();
+                                    jobj["devices"] = jarray;
+                                    body = jobj.dump();
                                     auto resp = svc->buildHttpResponse(http, body);
                                     auto ret = svc->web_tx(Fd, resp);
                                     std::cout << "line: " << __LINE__ << " sent to webui length: " << ret << " response: " << body << std::endl;
