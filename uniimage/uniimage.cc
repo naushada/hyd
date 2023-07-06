@@ -382,12 +382,31 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                     break;
                     case noor::ServiceType::Tcp_Web_Client_Connected_Service:
                     {
-                        //Data is availabe for read. --- web_rx()
-                        std::string request("");
-                        auto &svc = GetService(serviceType);
-                        auto result = svc->web_rx(Fd, request);
-                        auto rsp = svc->process_web_request(request);
-                        auto ret = svc->web_tx(Fd, rsp);
+                        do {
+                            //Data is availabe for read. --- web_rx()
+                            std::string request("");
+                            auto &svc = GetService(serviceType);
+                            auto result = svc->web_rx(Fd, request);
+                            Http http(request);
+                            if(!http.uri().compare(0, 19, "/api/v1/device/list")) {
+                                std::string body("");
+                                json jarray = json::array();
+                                for(const auto& ent: getResponseCache()) {
+                                    jarray.push_back(ent.second);
+                                }
+                                if(!jarray.empty()) {
+                                    body = jarray.dump();
+                                    auto resp = svc->buildHttpResponse(http, body);
+                                    auto ret = svc->web_tx(Fd, resp);
+                                    std::cout << "line: " << __LINE__ << " sent to webui length: " << ret << " response: " << body << std::endl;
+                                    break;
+                                }
+                            }
+
+                            auto rsp = svc->process_web_request(request);
+                            auto ret = svc->web_tx(Fd, rsp);
+                            std::cout << "line: " << __LINE__ << " sent to webui length: " << ret << std::endl;
+                        }while(0);
                     }
                     break;
                     case noor::ServiceType::Tcp_Device_Console_Connected_Service:
@@ -1548,7 +1567,7 @@ std::string noor::Service::buildHttpResponse(Http& http, const std::string& rsp_
     ss << "HTTP/1.1 200 OK\r\n"
        << "Host: " << http.value("Host") << "\r\n"
        << "Connection: " << http.value("Connection") << "\r\n"
-       << "Content-Type: application/json" << "\r\n";
+       << "Content-Type: application/vnd.api+json" << "\r\n";
 
     if(!http.value("Origin").length()) {
         ss << "Access-Control-Allow-Origin: *\r\n";
@@ -1589,6 +1608,7 @@ std::string noor::Service::handleOptionsMethod(Http& http) {
 std::string noor::Service::handleGetMethod(Http& http) {
 
     std::stringstream ss("");
+    #if 0
     if(!http.uri().compare(0, 19, "/api/v1/device/list")) {
         //Provide the device's list to Webclient.
         if(!noor::CommonResponse::instance().response().empty()) {
@@ -1613,7 +1633,9 @@ std::string noor::Service::handleGetMethod(Http& http) {
         auto rsp = buildHttpResponse(http, ss.str());
         return(rsp);
 
-    } else if(!http.uri().compare(0, 17, "/api/v1/device/ui")) {
+    } else 
+    #endif
+    if(!http.uri().compare(0, 17, "/api/v1/device/ui")) {
         return(buildHttpRedirectResponse(http));
 
     } else if(!http.uri().compare(0, 21, "/api/v1/shell/command")) {
