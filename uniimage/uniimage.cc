@@ -503,7 +503,9 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                             auto req = svc->restC().processResponse(out, body, result);
                             if(result.length()) {
                                 //push result to remote server
-                                
+                                json jobj = json::parse(result);
+                                auto srNumber = jobj["serialNumber"].get<std::string>();
+                                std::cout << "line: " << __LINE__ << " serialNumber: " << srNumber << std::endl;
                             } else if(req.length()) {
                                 ret = svc->tls().write(req);
                                 if(ret < 0) {
