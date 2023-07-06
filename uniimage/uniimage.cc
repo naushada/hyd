@@ -694,7 +694,7 @@ std::string noor::RestClient::registerDatapoints(const std::vector<std::string>&
     }
     auto body = jarray.dump();
     json jobj = json::object();
-    jobj["last"] = body;
+    jobj["last"] = jarray;
 
     //ss << "{\"last\": " << body << "}";
     body = jobj.dump();
