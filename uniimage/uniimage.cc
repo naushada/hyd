@@ -693,9 +693,11 @@ std::string noor::RestClient::registerDatapoints(const std::vector<std::string>&
         jarray.push_back(ent);
     }
     auto body = jarray.dump();
+    json jobj = json::object();
+    jobj["last"] = body;
 
-    ss << "{\"last\": " << body << "}";
-    body = ss.str();
+    //ss << "{\"last\": " << body << "}";
+    body = jobj.dump();
     //clear the previous contents now.
     ss.str("");
     ss << "POST " << uri <<" HTTP/1.1\r\n"
