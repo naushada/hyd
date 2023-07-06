@@ -180,12 +180,14 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                                     break;
                                 }
                             }
-                            std::cout << "line: " << __LINE__ << " client is connected successfully " << std::endl;
+                            std::cout << "line: " << __LINE__ << " client is connected successfully for serviceType: " << serviceType << std::endl;
                             //There's no error on the socket
                             ent.events = EPOLLIN | EPOLLHUP | EPOLLERR; 
                             auto ret = ::epoll_ctl(m_epollFd, EPOLL_CTL_MOD, Fd, &ent);
 
                             auto& svc = GetService(serviceType);
+                            svc->connected_client(noor::client_connection::Connected);
+
                             if(!svc->cache().empty()) {
                                 auto len = svc->tcp_tx(Fd, svc->cache().begin()->second);
                                 if(len > 0) {
@@ -225,6 +227,7 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                             auto ret = ::epoll_ctl(m_epollFd, EPOLL_CTL_MOD, Fd, &ent);
 
                             auto& svc = GetService(serviceType);
+                            svc->connected_client(noor::client_connection::Connected);
                             //do a TLS Hand shake
                             svc->tls().init(Fd);
                             svc->tls().client();
