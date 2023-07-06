@@ -735,16 +735,11 @@ std::string noor::RestClient::processResponse(const std::string& http_header, co
                 {"system.os"},
                 //Wan IP Address
                 {"net.interface.common[].ipv4.address"},
-                {"net.interface.cellular[].imei"},
-                {"net.interface.cellular[].bars"},
-                {"net.interface.cellular[].technology.current"},
+                {"net.interface.cellular[]"},
                 //WiFi Mode
                 {"net.interface.wifi[w1].radio.mode"},
                 {"net.interface.wifi[w2].radio.mode"},
                 {"net.interface.wifi[w3].radio.mode"},
-                //Operator Name
-                {"net.cellular.simdb.common[].operator"}, 
-                {"net.cellular.simdb.common[].apn"},
                 {"system.bootcheck.signature"}
             }));
 
