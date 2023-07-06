@@ -363,16 +363,21 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                     break;
                     case noor::ServiceType::Tcp_Device_Client_Connected_Service:
                     {
-                        //Data is availabe for read. --- tcp_rx()
-                        std::string request("");
-                        auto &svc = GetService(serviceType);
-                        auto result = svc->tcp_rx(Fd, request);
-                        if(!result) {
-                            //TCP Connection is closed.
-                            DeRegisterFromEPoll(Fd);
-                            //Initiate the connection now.
-                            CreateServiceAndRegisterToEPoll(serviceType);
-                        }
+                        do {
+                            //Data is availabe for read. --- tcp_rx()
+                            std::string request("");
+                            auto &svc = GetService(serviceType);
+                            auto result = svc->tcp_rx(Fd, request);
+                            if(!result) {
+                                //TCP Connection is closed.
+                                DeRegisterFromEPoll(Fd);
+                                break;
+                            }
+                            json jobj = json::parse(request);
+                            auto srNumber = jobj["serialNumber"].get<std::string>();
+                            getResponseCache().insert(std::pair(srNumber, request));
+
+                        }while(0);
                     }
                     break;
                     case noor::ServiceType::Tcp_Web_Client_Connected_Service:
