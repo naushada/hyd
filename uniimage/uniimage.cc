@@ -334,7 +334,8 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                         if(newFd > 0) {
                             std::uint16_t PORT = ntohs(addr.sin_port);
                             std::string IP(inet_ntoa(addr.sin_addr));
-
+                            std::cout<< "line: " << __LINE__ << " new client for TCP server IP: " << IP <<" PORT: " << PORT << " FD: " << newFd << std::endl;
+                            
                             if(!m_services.insert(std::make_pair(noor::ServiceType::Tcp_Device_Client_Connected_Service , std::make_unique<TcpClient>(newFd, IP, PORT))).second) {
                                 //Unable to insert the instance into container.
                                 std::cout << "line: " << __LINE__ << " element for Key: " << serviceType << " is already present" << std::endl;
