@@ -184,17 +184,15 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                             //There's no error on the socket
                             ent.events = EPOLLIN | EPOLLHUP | EPOLLERR; 
                             auto ret = ::epoll_ctl(m_epollFd, EPOLL_CTL_MOD, Fd, &ent);
-                            //Send the cached response from Data Store now.
-                            auto &svc = GetService(noor::ServiceType::Unix_Data_Store_Client_Service_Sync);
-                            if(!getResponseCache().empty()) {
-                                for(const auto& ent: getResponseCache().begin()->second) {
-                                    std::cout << "line: " << __LINE__ << " from cache: " << ent << std::endl;
+
+                            auto& svc = GetService(serviceType);
+                            if(!svc->cache().empty()) {
+                                auto len = svc->tcp_tx(Fd, svc->cache().begin()->second);
+                                if(len > 0) {
+                                    std::cout << "line: " << __LINE__ << " sent to Server over TCP len: " << len << std::endl; 
                                 }
-                                //svc->tcp_tx(Fd, getResponseCache().begin()->second);
                             }
-                            
                         } while(0);
-                        
                     }
                     break;
 
@@ -225,17 +223,19 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                             //There's no error on the socket
                             ent.events = EPOLLIN | EPOLLHUP | EPOLLERR; 
                             auto ret = ::epoll_ctl(m_epollFd, EPOLL_CTL_MOD, Fd, &ent);
-                            //Send the cached response from Data Store now.
-                            auto &svc = GetService(noor::ServiceType::Unix_Data_Store_Client_Service_Sync);
-                            if(!getResponseCache().empty()) {
-                                for(const auto& ent: getResponseCache().begin()->second) {
-                                    std::cout << "line: " << __LINE__ << " from cache: " << ent << std::endl;
+
+                            auto& svc = GetService(serviceType);
+                            //do a TLS Hand shake
+                            svc->tls().init(Fd);
+                            svc->tls().client();
+
+                            if(!svc->cache().empty()) {
+                                auto len = svc->tls().write(svc->cache().begin()->second);
+                                if(len > 0) {
+                                    std::cout << "line: " << __LINE__ << " sent to Server over TLS len: " << len << std::endl; 
                                 }
-                                //svc->tls().write();
                             }
-                            
                         } while(0);
-                        
                     }
                     break;
 
@@ -279,13 +279,14 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
 
                         ent.events = EPOLLIN | EPOLLHUP | EPOLLERR; 
                         auto ret = ::epoll_ctl(m_epollFd, EPOLL_CTL_MOD, Fd, &ent);
+
                         //Get Token for Rest Client
-                        std::stringstream body("");
-                        body << "{" << "\"login\": " << "\"test\"," << "\"password\": " << "\"test123\"}";
-                        auto req = svc->restC().getToken(body.str());
-                        std::cout << "line: " << __LINE__ << " Rest Request " << std::endl << req << std::endl;
+                        json jobj = json::object();
+                        jobj["login"] = "test";
+                        jobj["password"] = "test123";
+
+                        auto req = svc->restC().getToken(jobj.dump());
                         auto len = svc->tls().write(req);
-                        std::cout << "line: " << __LINE__ << " sent to REST server length: " << len << std::endl;
                     }
                     break;
                     default:
@@ -502,10 +503,25 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                             std::string result("");
                             auto req = svc->restC().processResponse(out, body, result);
                             if(result.length()) {
+                                
                                 //push result to remote server
                                 json jobj = json::parse(result);
                                 auto srNumber = jobj["serialNumber"].get<std::string>();
+                                //The key is the serial number
+                                svc->cache().insert(std::pair(srNumber, result));
+
                                 std::cout << "line: " << __LINE__ << " serialNumber: " << srNumber << std::endl;
+                                {
+                                    auto& svc = GetService(noor::ServiceType::Tcp_Device_Client_Service_Async);
+                                    auto Fd = svc->handle();
+                                    if(noor::client_connection::Connected == svc->connected_client(Fd)) {
+                                        auto len = svc->tcp_tx(Fd, result);
+                                        if(len > 0) {
+                                            std::cout << "line: " << __LINE__ << " sent to TCP Server len: " << len << std::endl; 
+                                        }
+                                    }
+                                }
+                                
                             } else if(req.length()) {
                                 ret = svc->tls().write(req);
                                 if(ret < 0) {
@@ -671,6 +687,13 @@ std::string noor::RestClient::getToken(const std::string& in) {
     return(ss.str());
 }
 
+/**
+ * @brief 
+ * 
+ * @param in 
+ * @param user 
+ * @return std::string 
+ */
 std::string noor::RestClient::authorizeToken(const std::string& in, const std::string& user) {
     std::string host("192.168.1.1:443");
     std::stringstream ss("");
@@ -689,6 +712,12 @@ std::string noor::RestClient::authorizeToken(const std::string& in, const std::s
     return(ss.str());
 }
 
+/**
+ * @brief 
+ * 
+ * @param dps 
+ * @return std::string 
+ */
 std::string noor::RestClient::registerDatapoints(const std::vector<std::string>& dps) {
     std::string host("192.168.1.1:443");
     std::stringstream ss("");
@@ -722,6 +751,14 @@ std::string noor::RestClient::buildRequest(const std::string& in, std::vector<st
     return(std::string());
 }
 
+/**
+ * @brief 
+ * 
+ * @param http_header 
+ * @param http_body 
+ * @param result 
+ * @return std::string 
+ */
 std::string noor::RestClient::processResponse(const std::string& http_header, const std::string& http_body, std::string& result) {
     std::cout << "line: " << __LINE__ << " header: " <<std::endl << http_header << " http_body: " << http_body << std::endl;
 
