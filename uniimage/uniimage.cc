@@ -379,6 +379,7 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                             json jobj = json::parse(request);
                             auto srNumber = jobj["serialNumber"].get<std::string>();
                             getResponseCache().insert(std::pair(srNumber, request));
+                            std::cout << "line: " << __LINE__ << " serialNumber: " << srNumber << " received from device over TCP : " << request << std::endl;
 
                         }while(0);
                     }
