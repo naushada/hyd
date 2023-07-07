@@ -155,7 +155,7 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
 
             if(ent.events == EPOLLOUT) {
                 //Descriptor is ready for Write
-                std::cout << "line: " << __LINE__ << " EPOLLOUT is set for serviceType: " << serviceType << std::endl;
+                std::cout << "line: " << __LINE__ << " EPOLLOUT is set for serviceType: " << serviceType << " channel: " << Fd << std::endl;
                 switch(serviceType) {
                     case noor::ServiceType::Tcp_Device_Client_Service_Async:
                     {
@@ -180,7 +180,7 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                                     break;
                                 }
                             }
-                            std::cout << "line: " << __LINE__ << " client is connected successfully for serviceType: " << serviceType << std::endl;
+                            std::cout << "line: " << __LINE__ << " client is connected successfully for serviceType: " << serviceType << " channel: " << Fd << std::endl;
                             //There's no error on the socket
                             ent.events = EPOLLIN | EPOLLHUP | EPOLLERR; 
                             auto ret = ::epoll_ctl(m_epollFd, EPOLL_CTL_MOD, Fd, &ent);
@@ -490,6 +490,8 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                         std::string request("");
                         auto &svc = GetService(serviceType);
                         auto result = svc->tcp_rx(Fd, request);
+                        std::cout << "line: " << __LINE__ << " serviceType: " << serviceType << " received from DMS: " << request << std::endl;
+                        //Pass on over TLS to Device
                     }
                     break;
 
