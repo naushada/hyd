@@ -289,6 +289,7 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                         jobj["password"] = "test123";
 
                         auto req = svc->restC().getToken(jobj.dump());
+                        std::cout << "line: " << __LINE__ << " request sent: " << std::endl << req << std::endl;
                         auto len = svc->tls().write(req);
                     }
                     break;
@@ -319,6 +320,7 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                                 std::cout << "line: " << __LINE__ << " element for Key: " << serviceType << " is already present" << std::endl;
                                 return(-1);
                             }
+                            std::cout << "line: " << __LINE__ << " Tcp_Web_Client_Connected_Service and registered to epoll " << std::endl;
                             RegisterToEPoll(noor::ServiceType::Tcp_Web_Client_Connected_Service);
                         }
                     }
@@ -335,7 +337,7 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                             std::uint16_t PORT = ntohs(addr.sin_port);
                             std::string IP(inet_ntoa(addr.sin_addr));
                             std::cout<< "line: " << __LINE__ << " new client for TCP server IP: " << IP <<" PORT: " << PORT << " FD: " << newFd << std::endl;
-                            
+
                             if(!m_services.insert(std::make_pair(noor::ServiceType::Tcp_Device_Client_Connected_Service , std::make_unique<TcpClient>(newFd, IP, PORT))).second) {
                                 //Unable to insert the instance into container.
                                 std::cout << "line: " << __LINE__ << " element for Key: " << serviceType << " is already present" << std::endl;
@@ -575,6 +577,12 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
             } else if(ent.events == EPOLLHUP) {
                 //Connection is closed by other end
                 switch(serviceType) {
+                    case noor::ServiceType::Tcp_Device_Client_Connected_Service:
+                    {
+                        std::cout << "line: " << __LINE__ << " connection is closed for service: " << serviceType << std::endl;
+                        DeRegisterFromEPoll(Fd);
+                    }
+                    break;
                     case noor::ServiceType::Tcp_Device_Client_Service_Async:
                     case noor::ServiceType::Tcp_Device_Console_Client_Service_Async:
                     case noor::ServiceType::Tcp_Web_Client_Proxy_Service:
@@ -662,7 +670,7 @@ std::int32_t noor::Uniimage::RegisterToEPoll(noor::ServiceType serviceType) {
     auto &inst = GetService(serviceType);
     struct epoll_event evt;
 
-    std::cout << "line: " << __LINE__ << " handle: " << inst->handle() << " serviceType: " << serviceType << std::endl;
+    std::cout << "line: " << __LINE__ << " handle: " << inst->handle() << " serviceType: " << serviceType  << " added to epoll" << std::endl;
     std::uint64_t dd = std::uint64_t(inst->handle());
     evt.data.u64 = std::uint64_t( dd << 32) | std::uint64_t(serviceType);
 

@@ -602,6 +602,9 @@ class TcpClient: public noor::Service {
 
         TcpClient(const std::int32_t& fd, const std::string& IP , const std::int32_t& PORT) {
             handle(fd);
+            //learn them for future
+            ip(IP);
+            port(PORT);
             connected_client(noor::client_connection::Connected);
         }
 
