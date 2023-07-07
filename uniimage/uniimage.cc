@@ -58,12 +58,12 @@ std::int32_t noor::Uniimage::CreateServiceAndRegisterToEPoll(noor::ServiceType s
     do {
         switch(serviceType) {
 
-            case noor::Tcp_Device_Client_Service_Sync:
-            case noor::Tcp_Device_Client_Service_Async:
-            case noor::Tcp_Device_Console_Client_Service_Async:
-            case noor::Tcp_Device_Console_Client_Service_Sync:
-            case noor::Tcp_Web_Client_Proxy_Service:
-            case noor::Tls_Tcp_Device_Rest_Client_Service_Sync:
+            case noor::ServiceType::Tcp_Device_Client_Service_Sync:
+            case noor::ServiceType::Tcp_Device_Client_Service_Async:
+            case noor::ServiceType::Tcp_Device_Console_Client_Service_Async:
+            case noor::ServiceType::Tcp_Device_Console_Client_Service_Sync:
+            case noor::ServiceType::Tcp_Web_Client_Proxy_Service:
+            case noor::ServiceType::Tls_Tcp_Device_Rest_Client_Service_Sync:
             {
                 if(!m_services.insert(std::make_pair(serviceType, std::make_unique<TcpClient>(IP, PORT, isAsync))).second) {
                     //Unable to insert the instance into container.
@@ -74,9 +74,9 @@ std::int32_t noor::Uniimage::CreateServiceAndRegisterToEPoll(noor::ServiceType s
             }
             break;
 
-            case noor::Tcp_Device_Server_Service:
-            case noor::Tcp_Device_Console_Server_Service:
-            case noor::Tcp_Web_Server_Service:
+            case noor::ServiceType::Tcp_Device_Server_Service:
+            case noor::ServiceType::Tcp_Device_Console_Server_Service:
+            case noor::ServiceType::Tcp_Web_Server_Service:
             {
                 if(!m_services.insert(std::make_pair(serviceType, std::make_unique<TcpServer>(IP, PORT))).second) {
                     //Unable to insert the instance into container.
