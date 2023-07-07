@@ -331,6 +331,7 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                         struct sockaddr_in addr;
                         socklen_t addr_len = sizeof(addr);
                         newFd = ::accept(Fd, (struct sockaddr *)&addr, &addr_len);
+                        std::cout << "line: " << __LINE__ << " value of newFd: " << newFd << std::endl;
                         // new connection is accepted successfully.
 
                         if(newFd > 0) {
