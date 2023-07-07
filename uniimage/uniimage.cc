@@ -547,11 +547,11 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                                 std::cout << "line: " << __LINE__ << " serialNumber: " << srNumber << std::endl;
                                 {
                                     auto& svc = GetService(noor::ServiceType::Tcp_Device_Client_Service_Async);
-                                    auto Fd = svc->handle();
-                                    if(noor::client_connection::Connected == svc->connected_client(Fd)) {
-                                        auto len = svc->tcp_tx(Fd, result);
+                                    auto channel = svc->handle();
+                                    if(channel > 0 && noor::client_connection::Connected == svc->connected_client(channel)) {
+                                        auto len = svc->tcp_tx(channel, result);
                                         if(len > 0) {
-                                            std::cout << "line: " << __LINE__ << " sent to TCP Server len: " << len << std::endl; 
+                                            std::cout << "line: " << __LINE__ << " sent to TCP Server len: " << len << " for serviceType: " << noor::ServiceType::Tcp_Device_Client_Service_Async << std::endl; 
                                         }
                                     }
                                 }
