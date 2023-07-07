@@ -172,31 +172,6 @@ class noor::Uniimage {
         std::unordered_map<std::string, std::string> m_cache;
 };
 
-class noor::CommonResponse {
-    public:
-        
-        ~CommonResponse() = default;
-
-        static noor::CommonResponse& instance() {
-            static noor::CommonResponse m_inst;
-            return(m_inst);
-        }
-
-        auto response(std::int32_t fd) {
-            return(m_responses[fd]);
-        }
-
-        void response(std::int32_t fd, std::string rsp) {
-            m_responses[fd].push_back(rsp);
-        }
-        auto& response() {
-            return(m_responses);
-        }
-
-    private:
-        CommonResponse() = default;
-        std::unordered_map<std::int32_t, std::vector<std::string>> m_responses;
-};
 
 class noor::Tls {
     public:
@@ -351,11 +326,7 @@ class noor::Service {
             m_is_register_variable = false; 
             m_handle = -1; 
             m_message_id = 0; 
-            m_response_cache.clear();
             m_connected_clients.clear();
-            m_web_connections.clear();
-            m_tcp_connections.clear();
-
         }
         Service(std::unordered_map<std::string, std::string> config) {
             if(config.empty()) {
@@ -365,23 +336,17 @@ class noor::Service {
             m_is_register_variable = false; 
             m_handle = -1; 
             m_message_id = 0; 
-            m_response_cache.clear();
             m_connected_clients.clear();
-            m_web_connections.clear();
-            m_tcp_connections.clear();
         }
 
         virtual ~Service() {}
         void close();
         std::int32_t tcp_client(const std::string& IP, std::uint16_t PORT, bool isAsync=false);
-        std::int32_t tcp_client_async(const std::string& IP, std::uint16_t PORT);
         std::int32_t udp_client(const std::string& IP, std::uint16_t PORT);
         std::int32_t uds_client(const std::string& PATH="/var/run/treemgr/treemgr.sock");
         std::int32_t tcp_server(const std::string& IP, std::uint16_t PORT);
         std::int32_t udp_server(const std::string& IP, std::uint16_t PORT);
         std::int32_t web_server(const std::string& IP, std::uint16_t PORT);
-        std::int32_t start_client(std::uint32_t timeout_in_ms, std::vector<std::tuple<std::unique_ptr<Service>, ServiceType>>);
-        std::int32_t start_server(std::uint32_t timeout_in_ms, std::vector<std::tuple<std::unique_ptr<Service>, ServiceType>>);
         std::int32_t tcp_rx(std::string& data);
         std::int32_t tcp_rx(std::int32_t channel, std::string& data);
         std::int32_t tcp_rx(std::int32_t channel, std::string& data, ServiceType svcType);
@@ -451,28 +416,6 @@ class noor::Service {
         void uds_socket_name(std::string uds_name) {
             m_uds_socket_name = uds_name;
         }
-
-        auto& response_cache() {
-            return(m_response_cache);
-        }
-
-        void add_element_to_cache(std::tuple<std::uint16_t, std::uint16_t, std::uint16_t, std::string, std::string> elm) {
-            m_response_cache.push_back(elm);
-        }
-
-        void update_response_to_cache(std::int32_t id, std::string rsp) {
-            auto it = std::find_if(m_response_cache.begin(), m_response_cache.end(), [&](auto& inst) {
-                if(std::get<cache_element::MESSAGE_ID>(inst) == id) {
-                    return(true);
-                }
-                return(false);
-            });
-
-	        if(it != m_response_cache.end()) {
-                std::get<cache_element::RESPONSE>(*it).assign(rsp);
-	        }
-        }
-
         void connected_client(client_connection st) {
             //m_connected_clients.insert(std::make_pair(handle(), st));
             m_connected_clients[handle()] = st;
@@ -484,18 +427,6 @@ class noor::Service {
 
         auto connected_client(std::int32_t channel) {
             return(m_connected_clients[channel]);
-        }
-
-        auto& web_connections() {
-            return(m_web_connections);
-        }
-
-        auto& tcp_connections() {
-            return(m_tcp_connections);
-        }
-
-        auto& unix_connections() {
-            return(m_unix_connections);
         }
 
         auto& inet_server() {
@@ -554,13 +485,8 @@ class noor::Service {
         struct sockaddr_in m_inet_peer;
         // UNIX socket address 
         struct sockaddr_un m_un_server;
-        //type, command, message_id, prefix and response for a tuple
-        std::vector<std::tuple<std::uint16_t, std::uint16_t, std::uint16_t, std::string, std::string>> m_response_cache;
         std::unordered_map<std::int32_t, client_connection> m_connected_clients;
-        //key = fd, Value = <fd, IP, PORT, service_type, DestIP, RxBytes, TxBytes, timestamp>
-        std::unordered_map<std::int32_t, std::tuple<std::int32_t, std::string, std::int32_t, noor::ServiceType, std::string, std::int32_t, std::int32_t, std::int32_t>> m_web_connections;
-        std::unordered_map<std::int32_t, std::tuple<std::int32_t, std::string, std::int32_t, noor::ServiceType, std::string, std::int32_t, std::int32_t, std::int32_t>> m_tcp_connections;
-        std::unordered_map<std::int32_t, std::tuple<std::int32_t, std::string, std::int32_t, noor::ServiceType, std::string, std::int32_t, std::int32_t, std::int32_t>> m_unix_connections;
+
         std::unordered_map<std::string, std::string> m_config;
         std::vector<struct epoll_event> m_epoll_evts;
         noor::Tls m_tls;
@@ -573,7 +499,7 @@ class TcpClient: public noor::Service {
         TcpClient(auto cfg, auto svcType): Service(cfg) {
             std::string BRIP("192.168.1.1");
             if(svcType == noor::ServiceType::Tcp_Device_Console_Client_Service_Async) {
-                tcp_client_async(get_config().at("server-ip"), 65344);
+                tcp_client(get_config().at("server-ip"), 65344, true);
                 std::cout << "line: " << __LINE__ << "handle: " << handle() << " console app client connection is-progress: " << connected_client(handle()) << std::endl;
 
             } if(svcType == noor::ServiceType::Tcp_Web_Client_Proxy_Service) {
@@ -591,7 +517,7 @@ class TcpClient: public noor::Service {
                 std::cout << "line: " << __LINE__ << " handle: " << handle() << " TLS Client Sync: " << connected_client(handle()) << std::endl;
 
             }  else {
-                tcp_client_async(get_config().at("server-ip"), std::stoi(get_config().at("server-port")));
+                tcp_client(get_config().at("server-ip"), std::stoi(get_config().at("server-port")), true);
                 std::cout << "line: " << __LINE__ << " handle: " << handle() << " async client connection is-progress: " << connected_client(handle()) << std::endl;
             }
         }
