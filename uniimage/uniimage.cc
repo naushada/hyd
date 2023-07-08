@@ -435,7 +435,7 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                         if(!result) {
                             std::cout << "line: " << __LINE__ << " closing connection for serviceType: " << serviceType << std::endl;
                             DeleteService(serviceType, Fd);
-                            DeRegisterFromEPoll(serviceType);
+                            DeRegisterFromEPoll(Fd);
                         }
                     }
                     break;
@@ -450,7 +450,7 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                                 auto IP = svc->ip();
                                 auto PORT = svc->port();
                                 DeleteService(serviceType);
-                                DeRegisterFromEPoll(serviceType);
+                                DeRegisterFromEPoll(Fd);
                                 CreateServiceAndRegisterToEPoll(serviceType, IP, PORT,true);
                                 break;
                             }
@@ -477,7 +477,7 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                                 auto IP = svc->ip();
                                 auto PORT = svc->port();
                                 DeleteService(serviceType);
-                                DeRegisterFromEPoll(serviceType);
+                                DeRegisterFromEPoll(Fd);
                                 CreateServiceAndRegisterToEPoll(serviceType, IP, PORT,true);
                                 break;
                             }
@@ -637,15 +637,17 @@ std::int32_t noor::Uniimage::DeRegisterFromEPoll(std::int32_t fd) {
         return(evtFd == fd);
     });
 
-    if(::epoll_ctl(m_epollFd, EPOLL_CTL_DEL, fd, nullptr) == -1)
-    {
-        std::cout << "line: " << __LINE__ << " Failed to delete Fd from epoll instance for fd: " << fd << std::endl;
-    }
-
-    close(fd);
     if(it != m_evts.end()) {
-        m_evts.erase(it);
-        return(0);
+        if(::epoll_ctl(m_epollFd, EPOLL_CTL_DEL, fd, nullptr) == -1)
+        {
+            std::cout << "line: " << __LINE__ << " Failed to delete Fd from epoll instance for fd: " << fd << std::endl;
+        }
+
+        close(fd);
+        if(it != m_evts.end()) {
+            m_evts.erase(it);
+            return(0);
+        }
     }
 
     return(-1);
