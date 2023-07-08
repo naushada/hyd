@@ -454,46 +454,6 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                         auto result = svc->tcp_rx(Fd, request);
                     }
                     break;
-                    case noor::ServiceType::Unix_Data_Store_Client_Service_Sync:
-                    {
-                        //Data is availabe for read. --- uds_rx()
-                        auto &svc = GetService(serviceType);
-                        auto result = svc->uds_rx();
-                        auto json_arr = json::parse(result.m_response);
-                        auto json_obj = json_arr.at(0);
-
-                        #if 0
-                        std::cout << "line: " << __LINE__ << " object: " << json_obj << std::endl;
-                        if(json_obj["device.provisioning.serial"] != nullptr && json_obj["device.provisioning.serial"].get<std::string>().length()) {
-                            auto serialNo = json_obj["device.provisioning.serial"];
-                            std::cout << "line: " << __LINE__ << " serialnumber: " << serialNo << std::endl;
-                        }
-                        #endif
-
-                        if(!m_cache.size()) {
-                            for(auto it = json_obj.begin(); it != json_obj.end(); ++it) {
-                                if(!it.key().compare("device.provisioning.serial") && it.value().is_string()) {
-                                    std::cout << "line: " << __LINE__ << " serialnumber: " << it.value() << std::endl;
-                                    std::vector<std::string> rsp;
-                                    rsp.push_back(result.m_response);
-                                    //m_cache[it.value()] = rsp;
-                                }
-                            }
-                        } else {
-                            //m_cache.begin()->second.push_back(result.m_response);
-                            std::cout << "line: " << __LINE__ << " number of elements: " << m_cache.begin()->second.size() << std::endl;
-                            for(const auto&ent: m_cache.begin()->second) {
-                                std::cout << "line: " << __LINE__ << " m_devideRspCache: " << ent <<std::endl;
-                            }
-                            if(5 == m_cache.begin()->second.size()) {
-                                auto &svc = GetService(noor::ServiceType::Tcp_Device_Client_Service_Async);
-                                if(noor::client_connection::Connected == svc->connected_client(svc->handle())) {
-                                    //Push to Device Management Server
-                                }
-                            }
-                        }
-                    }
-                    break;
                     case noor::ServiceType::Tcp_Device_Console_Client_Service_Async:
                     {
                         //Data is availabe for read. --- tcp_rx()
@@ -580,7 +540,7 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                                     if(channel > 0 && noor::client_connection::Connected == svc->connected_client(channel)) {
                                         auto len = svc->tcp_tx(channel, result);
                                         if(len > 0) {
-                                            std::cout << "line: " << __LINE__ << " sent to TCP Server len: " << len << " for serviceType: " << noor::ServiceType::Tcp_Device_Client_Service_Async << std::endl; 
+                                            std::cout << "line: " << __LINE__ << " sent to TCP Server len: " << len << " for serviceType: " << noor::ServiceType::Tcp_Device_Client_Service_Async << " result: " << result << std::endl; 
                                         }
                                     }
                                 }
