@@ -679,13 +679,14 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                     default:
                     {
                         //Connection is closed.
+                        std::cout << "line: " << __LINE__ << " connection is closed for service: " << serviceType << std::endl;
                         DeRegisterFromEPoll(Fd);
                     }
                 }
             } else if(ent.events == EPOLLERR) {
                 std::cout << "line: " << __LINE__ << " epollerr events: " << ent.events << std::endl;
             } else {
-                //std::cout << "line: " << __LINE__ << " unhandled events: " << ent.events << std::endl;
+                std::cout << "line: " << __LINE__ << " unhandled events: " << ent.events << std::endl;
             }
         }
     }
@@ -739,8 +740,9 @@ std::int32_t noor::Uniimage::RegisterToEPoll(noor::ServiceType serviceType) {
     if((serviceType == noor::ServiceType::Tcp_Device_Client_Service_Async) ||
        (serviceType == noor::ServiceType::Tcp_Device_Console_Client_Service_Async) ||
        (serviceType == noor::ServiceType::Tls_Tcp_Device_Rest_Client_Service_Async) ||
+       /*
        (serviceType == noor::ServiceType::Tcp_Device_Server_Service) ||
-       (serviceType == noor::ServiceType::Tcp_Web_Server_Service) ||
+       (serviceType == noor::ServiceType::Tcp_Web_Server_Service) ||*/
        (serviceType == noor::ServiceType::Tls_Tcp_Device_Rest_Client_Service_Sync)) {
         evt.events = EPOLLOUT | EPOLLERR | EPOLLHUP;
     } else {
