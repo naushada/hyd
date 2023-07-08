@@ -135,16 +135,16 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
         toInMilliSeconds = -1;
     }
 
-    std::vector<struct epoll_event> activeEvt(m_evts.size());
+    std::vector<struct epoll_event> activeEvt(m_services.size());
 
     while(true) {
         std::int32_t nReady = -1;
-        activeEvt.resize(m_evts.size());
+        activeEvt.resize(m_services.size());
         nReady = ::epoll_wait(m_epollFd, activeEvt.data(), activeEvt.size(), toInMilliSeconds);
         //Upon timeout nReady is ZERO and -1 Upon Failure.
         if(nReady > 0) {
             activeEvt.resize(nReady);
-            std::cout << "line: " << __LINE__ << " nReady: " << nReady << " activeEvt.size(): " << activeEvt.size() << std::endl;
+            std::cout << "line: " << __LINE__ << " nReady: " << nReady << " m_services.size(): " << m_services.size() << std::endl;
         } else if(nReady < 0) {
             //Error is returned by epoll_wait
             if(EBADF == errno) {
@@ -156,7 +156,6 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
             } else if(EINVAL == errno) {
                 std::cout << "line: " << __LINE__ << " epfd is not an epoll file descriptor, or maxevents is less than or equal to zero" << std::endl;
             }
-            perror("Epoll error : ");
             std::cout << "line: " << __LINE__ << "nReady: " << nReady << std::endl;
             continue;
         }
@@ -401,8 +400,11 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                             std::string request("");
                             auto &svc = GetService(serviceType);
                             auto result = svc->tcp_rx(Fd, request);
+                            std::cout << "line: " << __LINE__ << " result: " << result << " connected client " << std::endl;
+
                             if(!result) {
                                 //TCP Connection is closed.
+                                std::cout << "line: " << __LINE__ << " closing the client connection " << std::endl;
                                 DeRegisterFromEPoll(Fd);
                                 break;
                             }
@@ -1867,7 +1869,7 @@ std::int32_t noor::Service::tcp_server(const std::string& IP, std::uint16_t PORT
     memset(m_inet_server.sin_zero, 0, sizeof(m_inet_server.sin_zero));
     auto len = sizeof(m_inet_server);
 
-    std::int32_t channel = ::socket(AF_INET, SOCK_STREAM/*|SOCK_NONBLOCK*/, IPPROTO_TCP);
+    std::int32_t channel = ::socket(AF_INET, SOCK_STREAM|SOCK_NONBLOCK, IPPROTO_TCP);
     if(channel < 0) {
         std::cout << "line: " << __LINE__ << " Creation of INET socket Failed" << std::endl;
         return(-1);
