@@ -146,6 +146,16 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
             std::cout << "line: " << __LINE__ << " nReady: " << nReady << " activeEvt.size(): " << activeEvt.size() << std::endl;
         } else if(nReady < 0) {
             //Error is returned by epoll_wait
+            if(EBADF == errno) {
+                std::cout << "line: " << __LINE__ << " epfd is not a valid file descriptor" << std::endl;
+            } else if(EFAULT == errno) {
+                std::cout << "line: " << __LINE__ << " The memory area pointed to by events is not accessible with write permissions" << std::endl;
+            } else if(EINTR == errno) {
+                std::cout << "line: " << __LINE__ << " The call was interrupted by a signal handler before" << std::endl;
+            } else if(EINVAL == errno) {
+                std::cout << "line: " << __LINE__ << " epfd is not an epoll file descriptor, or maxevents is less than or equal to zero" << std::endl;
+            }
+            perror("Epoll error : ");
             std::cout << "line: " << __LINE__ << "nReady: " << nReady << std::endl;
             continue;
         }
