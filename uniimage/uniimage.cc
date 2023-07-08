@@ -144,7 +144,7 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
 
         nReady = ::epoll_wait(m_epollFd, activeEvt.data(), activeEvt.size(), toInMilliSeconds);
         //Upon timeout nReady is ZERO and -1 Upon Failure.
-        if(nReady >= 0) {
+        if(nReady > 0) {
             activeEvt.resize(nReady);
             std::cout << "line: " << __LINE__ << " nReady: " << nReady << " activeEvt.size(): " << activeEvt.size() << std::endl;
         } else if(nReady < 0) {
