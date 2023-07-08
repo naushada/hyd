@@ -165,7 +165,12 @@ class noor::Uniimage {
         }
 
         Uniimage() : m_epollFd(-1), m_evts(), m_services(), m_cache() {}
-        ~Uniimage() = default;
+        ~Uniimage() {
+            ::close(m_epollFd);
+            m_services.clear();
+            m_cache.clear();
+            m_evts.clear();
+        }
 
     private:
         std::int32_t m_epollFd;

@@ -646,7 +646,7 @@ std::int32_t noor::Uniimage::DeRegisterFromEPoll(std::int32_t fd) {
             std::cout << "line: " << __LINE__ << " Failed to delete Fd from epoll instance for fd: " << fd << std::endl;
         }
 
-        close(fd);
+        ::close(fd);
         m_evts.erase(it);
         std::cout << "line: " << __LINE__ << " closed the Fd: " << fd << " m_evts.size(): " <<m_evts.size()  <<std::endl;
         return(0);
@@ -1394,7 +1394,7 @@ std::int32_t noor::Service::tcp_rx(std::string& data) {
     len = recv(handle(), arr.data(), sizeof(std::int32_t), 0);
     if(!len) {
         std::cout << "line: " << __LINE__ << " closed" << std::endl;
-        return(std::string().length());
+        return(len);
     } else if(len > 0) {
         std::cout << "line: " << __LINE__ << " len: " << len << std::endl;
         std::uint32_t payload_len; 
@@ -1423,7 +1423,7 @@ std::int32_t noor::Service::tcp_rx(std::string& data) {
         }
     }
 
-    return(std::string().length());
+    return(0);
 }
 
 std::string noor::Service::get_contentType(std::string ext)
