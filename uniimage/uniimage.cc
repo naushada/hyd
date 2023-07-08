@@ -644,10 +644,10 @@ std::int32_t noor::Uniimage::DeRegisterFromEPoll(std::int32_t fd) {
         }
 
         close(fd);
-        if(it != m_evts.end()) {
-            m_evts.erase(it);
-            return(0);
-        }
+        m_evts.erase(it);
+        std::cout << "line: " << __LINE__ << " closed the Fd: " << fd << " m_evts.size(): " <<m_evts.size()  <<std::endl;
+        return(0);
+        
     }
 
     return(-1);
