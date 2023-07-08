@@ -704,12 +704,16 @@ std::unique_ptr<noor::Service>& noor::Uniimage::GetService(noor::ServiceType ser
 
 std::unique_ptr<noor::Service>& noor::Uniimage::GetService(noor::ServiceType serviceType, const std::string& serialNumber) {
     auto it = m_services.equal_range(serviceType);
-    for(auto &ent = it.first; ent != it.second; ++ent) {
-        if(serialNumber.length() && !serialNumber.compare(ent->second->serialNo())) {
-            return(ent->second);
+    try {
+        for(auto &ent = it.first; ent != it.second; ++ent) {
+            if(serialNumber.length() && !serialNumber.compare(ent->second->serialNo())) {
+                return(ent->second);
+            }
         }
+        //throw an exception
+    } catch (const std::invalid_argument& e) {
+        std::cout << "line: " << __LINE__ << " Exception for invalid argument " << std::endl;
     }
-    //throw an exception
 }
 
 void noor::Uniimage::DeleteService(noor::ServiceType serviceType, const std::int32_t& channel) {
