@@ -723,11 +723,11 @@ void noor::Uniimage::DeleteService(noor::ServiceType serviceType, const std::int
             if(channel > 0 && channel == ent->second->handle()) {
                 //Erasing element from multimap now.
                 m_services.erase(ent);
+                std::cout << "line: " << __LINE__ << " m_services.size(): " << m_services.size() << std::endl;
                 break;
             }
         }
     }
-    std::cout << "line: " << __LINE__ << "m_services.size(): " << m_services.size() << std::endl;
 }
 
 void noor::Uniimage::DeleteService(noor::ServiceType serviceType) {
@@ -736,7 +736,7 @@ void noor::Uniimage::DeleteService(noor::ServiceType serviceType) {
     if(it != m_services.end()) {
         it = m_services.erase(it);
     }
-    std::cout << "line: " << __LINE__ << "m_services.size(): " << m_services.size() << std::endl;
+    std::cout << "line: " << __LINE__ << " m_services.size(): " << m_services.size() << std::endl;
 }
 
 /******************************************************************************
