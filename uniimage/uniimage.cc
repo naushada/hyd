@@ -65,11 +65,7 @@ std::int32_t noor::Uniimage::CreateServiceAndRegisterToEPoll(noor::ServiceType s
             case noor::ServiceType::Tcp_Web_Client_Proxy_Service:
             case noor::ServiceType::Tls_Tcp_Device_Rest_Client_Service_Sync:
             {
-                if(!m_services.insert(std::make_pair(serviceType, std::make_unique<TcpClient>(IP, PORT, isAsync))).second) {
-                    //Unable to insert the instance into container.
-                    std::cout << "line: " << __LINE__ << " element for Key: " << serviceType << " is already present" << std::endl;
-                    return(-1);
-                }
+                m_services.insert(std::make_pair(serviceType, std::make_unique<TcpClient>(IP, PORT, isAsync)));
                 RegisterToEPoll(serviceType);
             }
             break;
@@ -78,21 +74,13 @@ std::int32_t noor::Uniimage::CreateServiceAndRegisterToEPoll(noor::ServiceType s
             case noor::ServiceType::Tcp_Device_Console_Server_Service:
             case noor::ServiceType::Tcp_Web_Server_Service:
             {
-                if(!m_services.insert(std::make_pair(serviceType, std::make_unique<TcpServer>(IP, PORT))).second) {
-                    //Unable to insert the instance into container.
-                    std::cout << "line: " << __LINE__ << " element for Key: " << serviceType << " is already present" << std::endl;
-                    return(-1);
-                }
+                m_services.insert(std::make_pair(serviceType, std::make_unique<TcpServer>(IP, PORT)));
                 RegisterToEPoll(serviceType);
             }
             break;
             case noor::ServiceType::Unix_Data_Store_Client_Service_Sync:
             {
-                if(!m_services.insert(std::make_pair(serviceType, std::make_unique<UnixClient>())).second) {
-                    //Unable to insert the instance into container.
-                    std::cout << "line: " << __LINE__ << " element for Key: " << serviceType << " is already present" << std::endl;
-                    return(-1);
-                }
+                m_services.insert(std::make_pair(serviceType, std::make_unique<UnixClient>()));
                 RegisterToEPoll(serviceType);
             }
             break;
@@ -340,12 +328,7 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                             std::uint16_t PORT = ntohs(addr.sin_port);
                             std::string IP(inet_ntoa(addr.sin_addr));
 
-                            if(!m_services.insert(std::make_pair(noor::ServiceType::Tcp_Web_Client_Connected_Service , std::make_unique<TcpClient>(newFd, IP, PORT))).second) {
-                                //Unable to insert the instance into container.
-                                std::cout << "line: " << __LINE__ << " element for Key: " << serviceType << " is already present" << std::endl;
-                                return(-1);
-                            }
-                            std::cout << "line: " << __LINE__ << " Tcp_Web_Client_Connected_Service and registered to epoll " << std::endl;
+                            m_services.insert(std::make_pair(noor::ServiceType::Tcp_Web_Client_Connected_Service , std::make_unique<TcpClient>(newFd, IP, PORT)));
                             RegisterToEPoll(noor::ServiceType::Tcp_Web_Client_Connected_Service);
                         }
                     }
@@ -364,11 +347,7 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                             std::string IP(inet_ntoa(addr.sin_addr));
                             std::cout<< "line: " << __LINE__ << " new client for TCP server IP: " << IP <<" PORT: " << PORT << " FD: " << newFd << std::endl;
 
-                            if(!m_services.insert(std::make_pair(noor::ServiceType::Tcp_Device_Client_Connected_Service , std::make_unique<TcpClient>(newFd, IP, PORT))).second) {
-                                //Unable to insert the instance into container.
-                                std::cout << "line: " << __LINE__ << " element for Key: " << serviceType << " is already present" << std::endl;
-                                return(-1);
-                            }
+                            m_services.insert(std::make_pair(noor::ServiceType::Tcp_Device_Client_Connected_Service , std::make_unique<TcpClient>(newFd, IP, PORT)));
                             RegisterToEPoll(noor::ServiceType::Tcp_Device_Client_Connected_Service);
                         }
                     }
@@ -384,11 +363,7 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                             std::uint16_t PORT = ntohs(addr.sin_port);
                             std::string IP(inet_ntoa(addr.sin_addr));
 
-                            if(!m_services.insert(std::make_pair(noor::ServiceType::Tcp_Device_Console_Connected_Service, std::make_unique<TcpClient>(newFd, IP, PORT))).second) {
-                                //Unable to insert the instance into container.
-                                std::cout << "line: " << __LINE__ << " element for Key: " << serviceType << " is already present" << std::endl;
-                                return(-1);
-                            }
+                            m_services.insert(std::make_pair(noor::ServiceType::Tcp_Device_Console_Connected_Service, std::make_unique<TcpClient>(newFd, IP, PORT)));
                             RegisterToEPoll(noor::ServiceType::Tcp_Device_Console_Connected_Service);
                         }
                     }
@@ -569,8 +544,10 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                 //Connection is closed by other end
                 switch(serviceType) {
                     case noor::ServiceType::Tcp_Device_Client_Connected_Service:
+                    case noor::ServiceType::Tcp_Web_Client_Connected_Service:
                     {
                         std::cout << "line: " << __LINE__ << " connection is closed for service: " << serviceType << std::endl;
+                        DeleteService(serviceType, Fd);
                         DeRegisterFromEPoll(Fd);
                     }
                     break;
@@ -579,27 +556,20 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                     case noor::ServiceType::Tcp_Web_Client_Proxy_Service:
                     {
                         //start attempting the connection...
-                        auto& inst = m_services[serviceType];
+                        auto& inst = GetService(serviceType);
                         auto IP = inst->ip();
                         auto PORT = inst->port();
                         std::cout << "line: " << __LINE__ << " connection is closed for service: " << serviceType << std::endl;
+                        DeleteService(serviceType);
                         DeRegisterFromEPoll(Fd);
                         CreateServiceAndRegisterToEPoll(serviceType, IP, PORT, true);
                     }
                     break;
-
-                    case noor::ServiceType::Unix_Data_Store_Client_Service_Sync:
-                    {
-                        std::cout << "line: " << __LINE__ << " connection is closed for service: " << serviceType << std::endl;
-                        DeRegisterFromEPoll(Fd);
-                        CreateServiceAndRegisterToEPoll(serviceType);
-                    }
-                    break;
-
                     case noor::ServiceType::Tls_Tcp_Device_Rest_Client_Service_Sync:
                     case noor::ServiceType::Tls_Tcp_Device_Rest_Client_Service_Async:
                     {
                         std::cout << "line: " << __LINE__ << " connection is closed for service: " << serviceType << std::endl;
+                        DeleteService(serviceType);
                         DeRegisterFromEPoll(Fd);
                         CreateServiceAndRegisterToEPoll(serviceType);
                     }
@@ -609,6 +579,7 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                     {
                         //Connection is closed.
                         std::cout << "line: " << __LINE__ << " connection is closed for service: " << serviceType << std::endl;
+                        DeleteService(serviceType);
                         DeRegisterFromEPoll(Fd);
                     }
                 }
@@ -644,8 +615,6 @@ std::int32_t noor::Uniimage::DeRegisterFromEPoll(std::int32_t fd) {
     close(fd);
     if(it != m_evts.end()) {
         m_evts.erase(it);
-        //Release the owner of unique_ptr now
-        m_services[serviceType].reset(nullptr);
         return(0);
     }
 
@@ -692,7 +661,41 @@ std::int32_t noor::Uniimage::RegisterToEPoll(noor::ServiceType serviceType) {
  * @return std::unique_ptr<noor::Service>& 
  */
 std::unique_ptr<noor::Service>& noor::Uniimage::GetService(noor::ServiceType serviceType) {
-    return(m_services[serviceType]);
+    auto it = m_services.find(serviceType);
+    if(it != m_services.end()) {
+        return(it->second);
+    }
+}
+
+std::unique_ptr<noor::Service>& noor::Uniimage::GetService(noor::ServiceType serviceType, const std::string& serialNumber) {
+    auto it = m_services.equal_range(serviceType);
+    for(auto &ent = it.first; ent != it.second; ++ent) {
+        if(serialNumber.length() && !serialNumber.compare(ent->second->serialNo())) {
+            return(ent->second);
+        }
+    }
+    //throw an exception
+}
+
+void noor::Uniimage::DeleteService(noor::ServiceType serviceType, const std::int32_t& channel) {
+    auto it = m_services.equal_range(serviceType);
+    if(it.first != m_services.end()) {
+        for(auto &ent = it.first; ent != it.second; ++ent) {
+            if(channel > 0 && channel == ent->second->handle()) {
+                //Erasing element from multimap now.
+                m_services.erase(ent);
+                break;
+            }
+        }
+    }
+}
+
+void noor::Uniimage::DeleteService(noor::ServiceType serviceType) {
+    auto it = m_services.find(serviceType);
+    //Erasing element from multimap now.
+    if(it != m_services.end()) {
+        it = m_services.erase(it);
+    }
 }
 
 /******************************************************************************

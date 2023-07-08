@@ -32,6 +32,7 @@
 #include <thread>
 #include <sstream>
 #include <unordered_map>
+#include <map>
 #include <tuple>
 #include <getopt.h>
 #include <atomic>
@@ -147,8 +148,10 @@ namespace noor {
 class noor::Uniimage {
 
     public:
-
+        std::unique_ptr<noor::Service>& GetService(noor::ServiceType serviceType, const std::string& serialNumber);
         std::unique_ptr<noor::Service>& GetService(noor::ServiceType serviceType);
+        void DeleteService(noor::ServiceType serviceType, const std::int32_t& channel);
+        void DeleteService(noor::ServiceType serviceType);
         //For Unix socket IP, PORT and isAsync is don't care.
         std::int32_t CreateServiceAndRegisterToEPoll(noor::ServiceType serviceType, const std::string& IP="127.0.0.1", const std::uint16_t& PORT=65344, bool isAsync=false);
         std::int32_t RegisterToEPoll(noor::ServiceType serviceType);
@@ -167,7 +170,7 @@ class noor::Uniimage {
     private:
         std::int32_t m_epollFd;
         std::vector<struct epoll_event> m_evts;
-        std::unordered_map<noor::ServiceType, std::unique_ptr<noor::Service>> m_services;
+        std::multimap<noor::ServiceType, std::unique_ptr<noor::Service>> m_services;
         //The key is serial number of device. and value is json object.
         std::unordered_map<std::string, std::string> m_cache;
 };
@@ -472,6 +475,14 @@ class noor::Service {
             return(m_cache);
         }
 
+        std::string serialNo() const {
+            return(m_serialNumber);
+        }
+
+        void serialNumber(std::string srNo) {
+            m_serialNumber = srNo;
+        }
+
     private:
         std::atomic<std::uint16_t> m_message_id;
         bool m_is_register_variable;
@@ -492,6 +503,7 @@ class noor::Service {
         noor::Tls m_tls;
         noor::RestClient m_restC;
         std::unordered_map<std::string, std::string> m_cache;
+        std::string m_serialNumber;
 };
 
 class TcpClient: public noor::Service {
