@@ -1958,7 +1958,7 @@ std::int32_t noor::Service::tcp_server(const std::string& IP, std::uint16_t PORT
     memset(m_inet_server.sin_zero, 0, sizeof(m_inet_server.sin_zero));
     auto len = sizeof(m_inet_server);
 
-    std::int32_t channel = ::socket(AF_INET, SOCK_STREAM|SOCK_NONBLOCK, IPPROTO_TCP);
+    std::int32_t channel = ::socket(AF_INET, SOCK_STREAM/*|SOCK_NONBLOCK*/, IPPROTO_TCP);
     if(channel < 0) {
         std::cout << "line: " << __LINE__ << " Creation of INET socket Failed" << std::endl;
         return(-1);
