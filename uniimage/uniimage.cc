@@ -308,7 +308,7 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                     break;
                     default:
                     {
-
+                        std::cout << "line: " << __LINE__ << " default case for EPOLLOUT" << std::endl;
                     }
                     break;
                 }
@@ -555,6 +555,7 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                             } else if(req.length()) {
                                 ret = svc->tls().write(req);
                                 if(ret < 0) {
+                                    std::cout << "line: " << __LINE__ << " ssl write failed for serviceTYpe: " << serviceType << std::endl;
                                     break;
                                 }
                                 std::cout << "line: " << __LINE__ << " request sent to : " << std::endl << req << std::endl;
@@ -566,6 +567,8 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
 
                     default:
                     {
+                        std::cout << "line: " << __LINE__ << " EPOLLIN default case" << std::endl;
+                        break;
 
                     }
                 }
@@ -576,7 +579,7 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                     case noor::ServiceType::Tcp_Device_Client_Connected_Service:
                     case noor::ServiceType::Tcp_Web_Client_Connected_Service:
                     {
-                        std::cout << "line: " << __LINE__ << " connection is closed for service: " << serviceType << std::endl;
+                        std::cout << "line: " << __LINE__ << " closing connection for service: " << serviceType << " Fd: " << Fd << std::endl;
                         DeleteService(serviceType, Fd);
                         DeRegisterFromEPoll(Fd);
                     }
@@ -589,7 +592,7 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                         auto& inst = GetService(serviceType);
                         auto IP = inst->ip();
                         auto PORT = inst->port();
-                        std::cout << "line: " << __LINE__ << " connection is closed for service: " << serviceType << std::endl;
+                        std::cout << "line: " << __LINE__ << " closing connection for service: " << serviceType << " Fd: " << Fd << std::endl;
                         DeleteService(serviceType);
                         DeRegisterFromEPoll(Fd);
                         CreateServiceAndRegisterToEPoll(serviceType, IP, PORT, true);
@@ -608,7 +611,7 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                     default:
                     {
                         //Connection is closed.
-                        std::cout << "line: " << __LINE__ << " connection is closed for service: " << serviceType << std::endl;
+                        std::cout << "line: " << __LINE__ << " default case: connection is closed for service: " << serviceType << std::endl;
                         DeleteService(serviceType);
                         DeRegisterFromEPoll(Fd);
                     }
@@ -720,6 +723,7 @@ void noor::Uniimage::DeleteService(noor::ServiceType serviceType, const std::int
             }
         }
     }
+    std::cout << "line: " << __LINE__ << "m_services.size(): " << m_services.size() << std::endl;
 }
 
 void noor::Uniimage::DeleteService(noor::ServiceType serviceType) {
@@ -728,6 +732,7 @@ void noor::Uniimage::DeleteService(noor::ServiceType serviceType) {
     if(it != m_services.end()) {
         it = m_services.erase(it);
     }
+    std::cout << "line: " << __LINE__ << "m_services.size(): " << m_services.size() << std::endl;
 }
 
 /******************************************************************************
@@ -1336,7 +1341,7 @@ std::int32_t noor::Service::tcp_rx(std::int32_t channel, std::string& data) {
     //read 4 bytes - the payload length
     len = recv(channel, arr.data(), sizeof(std::int32_t), 0);
     if(!len) {
-        std::cout << "line: " << __LINE__ << " channel: " << channel << " closed " << std::endl;
+        //std::cout << "line: " << __LINE__ << " channel: " << channel << " closed " << std::endl;
         return(len);
 
     } else if(len > 0) {
