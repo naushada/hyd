@@ -618,8 +618,10 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                 }
             } else if(ent.events == EPOLLERR) {
                 std::cout << "line: " << __LINE__ << " epollerr events: " << ent.events << std::endl;
+            } else if(ent.events == EPOLLONESHOT) {
+                std::cout << "line: " << __LINE__ << " oneshots events: " << ent.events << std::endl;
             } else {
-                //std::cout << "line: " << __LINE__ << " unhandled events: " << ent.events << std::endl;
+                std::cout << "line: " << __LINE__ << " unhandled events: " << ent.events << std::endl;
             }
         }
     }
