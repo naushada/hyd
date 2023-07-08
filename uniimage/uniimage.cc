@@ -416,8 +416,20 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                                     auto resp = svc->buildHttpResponse(http, body);
                                     auto ret = svc->web_tx(Fd, resp);
                                     std::cout << "line: " << __LINE__ << " sent to webui length: " << ret << " response: " << body << std::endl;
-                                    break;
                                 }
+                                break;
+                            }
+
+                            if(!http.uri().compare(0, 14, "/api/v1/db/set") ||
+                               !http.uri().compare(0, 14, "/api/v1/db/get") ||
+                               !http.uri().compare(0, 15, "/api/v1/db/exec")) {
+                                std::string srNo;
+                                auto &svc = GetService(noor::ServiceType::Tcp_Device_Client_Connected_Service, srNo);
+                                svc->restC().uri(http.uri());
+                                std::string request;
+                                auto ret = svc->tcp_tx(svc->handle(), request);
+                                std::cout << "line: " << __LINE__ << " sending to device on channel: " << svc->handle() << " ret: " << ret << std::endl;
+                                break;
                             }
 
                             auto rsp = svc->process_web_request(request);
@@ -753,9 +765,9 @@ void noor::Uniimage::DeleteService(noor::ServiceType serviceType) {
 std::string noor::RestClient::getToken(const std::string& in) {
     std::string host("192.168.1.1:443");
     std::stringstream ss("");
-    uri.assign("/api/v1/auth/tokens");
+    m_uri.assign("/api/v1/auth/tokens");
 
-    ss << "POST " << uri <<" HTTP/1.1\r\n"
+    ss << "POST " << m_uri <<" HTTP/1.1\r\n"
         << "Host: " << host << "\r\n"
         << "Content-Type: application/vnd.api+json\r\n"
         << "Connection: keep-alive\r\n"
@@ -777,15 +789,15 @@ std::string noor::RestClient::getToken(const std::string& in) {
 std::string noor::RestClient::authorizeToken(const std::string& in, const std::string& user) {
     std::string host("192.168.1.1:443");
     std::stringstream ss("");
-    uri.assign("/api/v1/auth/authorization/");
-    uri += user;
+    m_uri.assign("/api/v1/auth/authorization/");
+    m_uri += user;
 
-    ss << "GET " << uri <<" HTTP/1.1\r\n"
+    ss << "GET " << m_uri <<" HTTP/1.1\r\n"
         << "Host: " << host << "\r\n"
         << "Content-Type: application/vnd.api+json\r\n"
         << "Connection: keep-alive\r\n"
         << "Accept: application/vnd.api+json\r\n"
-        << "Authorization: Bearer " << cookies << "\r\n"
+        << "Authorization: Bearer " << m_cookies << "\r\n"
         << "Content-Length: 0" << "\r\n"
         << "\r\n";
 
@@ -801,7 +813,7 @@ std::string noor::RestClient::authorizeToken(const std::string& in, const std::s
 std::string noor::RestClient::registerDatapoints(const std::vector<std::string>& dps) {
     std::string host("192.168.1.1:443");
     std::stringstream ss("");
-    uri.assign("/api/v1/register/db?fetch=true");
+    uri("/api/v1/register/db?fetch=true");
 
     json jarray = json::array();
     for(const auto& ent: dps) {
@@ -814,12 +826,12 @@ std::string noor::RestClient::registerDatapoints(const std::vector<std::string>&
 
     //clear the previous contents now.
     ss.str("");
-    ss << "POST " << uri <<" HTTP/1.1\r\n"
+    ss << "POST " << uri() <<" HTTP/1.1\r\n"
         << "Host: " << host << "\r\n"
         << "Content-Type: application/vnd.api+json\r\n"
         << "Connection: keep-alive\r\n"
         << "Accept: application/vnd.api+json\r\n"
-        << "Authorization: Bearer " << cookies << "\r\n"
+        << "Authorization: Bearer " << cookies() << "\r\n"
         << "Content-Length: " << body.length() << "\r\n"
         << "\r\n"
         << body;
@@ -842,12 +854,12 @@ std::string noor::RestClient::buildRequest(const std::string& in, std::vector<st
 std::string noor::RestClient::processResponse(const std::string& http_header, const std::string& http_body, std::string& result) {
     std::cout << "line: " << __LINE__ << " header: " <<std::endl << http_header << " http_body: " << http_body << std::endl;
 
-    if(!uri.compare(0, 19, "/api/v1/auth/tokens")) {
+    if(!uri().compare(0, 19, "/api/v1/auth/tokens")) {
         json json_object = json::parse(http_body);
-        cookies.assign(json_object["data"]["access_token"]);
+        cookies().assign(json_object["data"]["access_token"]);
         return(authorizeToken(http_body, "test"));
 
-    } else if(!uri.compare(0, 26, "/api/v1/auth/authorization")) {
+    } else if(!uri().compare(0, 26, "/api/v1/auth/authorization")) {
         std::cout << "line: " << __LINE__ << " http_body: " << http_body << std::endl;
         json json_object = json::parse(http_body);
         auto attmpts = json_object["data"]["attempts"].get<std::int32_t>();
@@ -867,7 +879,7 @@ std::string noor::RestClient::processResponse(const std::string& http_header, co
                 {"system.bootcheck.signature"}
             }));
 
-    } else if(!uri.compare(0, 19, "/api/v1/register/db")) {
+    } else if(!uri().compare(0, 19, "/api/v1/register/db")) {
         std::unordered_map<std::string, std::string> cache;
 
         if(http_body.length()) {

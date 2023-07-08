@@ -314,17 +314,21 @@ class noor::Tls {
 
 class noor::RestClient {
     public:
-        RestClient() : cookies(""), uri("") {}
+        RestClient() : m_cookies(""), m_uri("") {}
         ~RestClient() {}
         std::string getToken(const std::string& in);
         std::string authorizeToken(const std::string& in, const std::string& user);
         std::string registerDatapoints(const std::vector<std::string>& dps);
         std::string buildRequest(const std::string& in, std::vector<std::string> param = {});
         std::string processResponse(const std::string& http_header, const std::string& http_body, std::string &svc);
+        std::string uri() const {return(m_uri);}
+        void uri(std::string path) { m_uri = path;}
+        std::string cookies() const { return(m_cookies);}
+        void cookies(std::string token) {m_cookies = token;}
 
     private:
-        std::string cookies;
-        std::string uri;
+        std::string m_cookies;
+        std::string m_uri;
 };
 
 class noor::Service {
