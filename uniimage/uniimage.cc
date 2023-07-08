@@ -447,6 +447,7 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                             auto &svc = GetService(serviceType);
                             auto result = svc->tcp_rx(Fd, request);
                             if(!result) {
+                                std::cout << "line: " << __LINE__ << " closing the connection for Service: " << serviceType << std::endl;
                                 auto IP = svc->ip();
                                 auto PORT = svc->port();
                                 DeleteService(serviceType);
@@ -474,6 +475,7 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                             auto result = svc->tcp_rx(Fd, request);
 
                             if(!result) {
+                                std::cout << "line: " << __LINE__ << " closing the connection for Service: " << serviceType << std::endl;
                                 auto IP = svc->ip();
                                 auto PORT = svc->port();
                                 DeleteService(serviceType);
