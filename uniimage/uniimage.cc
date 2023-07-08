@@ -380,11 +380,14 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                             if(!result) {
                                 //TCP Connection is closed.
                                 std::cout << "line: " << __LINE__ << " closing the client connection " << std::endl;
+                                DeleteService(serviceType, Fd);
                                 DeRegisterFromEPoll(Fd);
                                 break;
                             }
                             json jobj = json::parse(request);
                             auto srNumber = jobj["serialNumber"].get<std::string>();
+                            //learn the serial number now.
+                            svc->serialNumber(srNumber);
                             getResponseCache().insert(std::pair(srNumber, request));
                             std::cout << "line: " << __LINE__ << " serialNumber: " << srNumber << " received from device over TCP : " << request << std::endl;
 
@@ -429,14 +432,29 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                         std::string request("");
                         auto &svc = GetService(serviceType);
                         auto result = svc->tcp_rx(Fd, request);
+                        if(!result) {
+                            std::cout << "line: " << __LINE__ << " closing connection for serviceType: " << serviceType << std::endl;
+                            DeleteService(serviceType, Fd);
+                            DeRegisterFromEPoll(serviceType);
+                        }
                     }
                     break;
                     case noor::ServiceType::Tcp_Device_Console_Client_Service_Async:
                     {
-                        //Data is availabe for read. --- tcp_rx()
-                        std::string request("");
-                        auto &svc = GetService(serviceType);
-                        auto result = svc->tcp_rx(Fd, request);
+                        do {
+                            //Data is availabe for read. --- tcp_rx()
+                            std::string request("");
+                            auto &svc = GetService(serviceType);
+                            auto result = svc->tcp_rx(Fd, request);
+                            if(!result) {
+                                auto IP = svc->ip();
+                                auto PORT = svc->port();
+                                DeleteService(serviceType);
+                                DeRegisterFromEPoll(serviceType);
+                                CreateServiceAndRegisterToEPoll(serviceType, IP, PORT,true);
+                                break;
+                            }
+                        }while(0);
                     }
                     break;
                     case noor::ServiceType::Tcp_Web_Client_Proxy_Service:
@@ -449,12 +467,24 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                     break;
                     case noor::ServiceType::Tcp_Device_Client_Service_Async:
                     {
-                        //Data is availabe for read. --- tcp_rx()
-                        std::string request("");
-                        auto &svc = GetService(serviceType);
-                        auto result = svc->tcp_rx(Fd, request);
-                        std::cout << "line: " << __LINE__ << " serviceType: " << serviceType << " received from DMS: " << request << std::endl;
-                        //Pass on over TLS to Device
+                        do {
+                            //Data is availabe for read. --- tcp_rx()
+                            std::string request("");
+                            auto &svc = GetService(serviceType);
+                            auto result = svc->tcp_rx(Fd, request);
+
+                            if(!result) {
+                                auto IP = svc->ip();
+                                auto PORT = svc->port();
+                                DeleteService(serviceType);
+                                DeRegisterFromEPoll(serviceType);
+                                CreateServiceAndRegisterToEPoll(serviceType, IP, PORT,true);
+                                break;
+                            }
+                            std::cout << "line: " << __LINE__ << " serviceType: " << serviceType << " received from DMS: " << request << std::endl;
+                            //Pass on over TLS to Device
+                            break;
+                        }while(0);
                     }
                     break;
 
