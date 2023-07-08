@@ -136,7 +136,8 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
     }
 
     std::vector<struct epoll_event> activeEvt(m_evts.size());
-    std::cout << "line: " << __LINE__ << "m_evts.size(): " << m_evts.size() << std::endl;
+    std::cout << "line: " << __LINE__ << " m_evts.size(): " << m_evts.size() << " activeEvt.size(): " << activeEvt.size() << std::endl;
+
 
     while(true) {
         std::int32_t nReady = -1;
