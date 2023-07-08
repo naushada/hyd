@@ -161,7 +161,7 @@ class noor::Uniimage {
             return(m_cache);
         }
 
-        Uniimage() : m_epollFd(), m_evts(), m_services(), m_cache() {}
+        Uniimage() : m_epollFd(-1), m_evts(), m_services(), m_cache() {}
         ~Uniimage() = default;
 
     private:

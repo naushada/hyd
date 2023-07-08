@@ -39,7 +39,7 @@ std::int32_t noor::Uniimage::init() {
         } else if(ENOMEM == errno) {
             std::cout << "line: " << __LINE__ << " Unable to create epoll instance errno: ENOMEM no memory to create kernel object" << std::endl;
         } else {
-
+            std::cout << "line: " << __LINE__ << " epoll_create1 is failed" << std::endl;
         }
     }
     return(m_epollFd);
@@ -99,6 +99,7 @@ std::int32_t noor::Uniimage::CreateServiceAndRegisterToEPoll(noor::ServiceType s
             default:
             {
                 //Default case 
+                std::cout << "line: " << __LINE__ << " unknown serviceType: " << serviceType << std::endl;
             }
         }
     }while(0);
@@ -135,6 +136,7 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
     }
 
     std::vector<struct epoll_event> activeEvt(m_evts.size());
+    std::cout << "line: " << __LINE__ << "m_evts.size(): " << m_evts.size() << std::endl;
 
     while(true) {
         std::int32_t nReady = -1;
@@ -1098,7 +1100,8 @@ int main(std::int32_t argc, char *argv[]) {
     std::uint16_t httpsPort = 443;
     std::uint16_t consolePort = 65344;
 
-    inst.init();
+    auto ret = inst.init();
+    std::cout << "line: " << __LINE__ << " epoll_fd: " << ret << std::endl;
 
     if(!config["role"].compare("client")) {
         
