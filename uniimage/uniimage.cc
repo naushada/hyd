@@ -136,12 +136,10 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
     }
 
     std::vector<struct epoll_event> activeEvt(m_evts.size());
-    std::cout << "line: " << __LINE__ << " m_evts.size(): " << m_evts.size() << " activeEvt.size(): " << activeEvt.size() << std::endl;
-
 
     while(true) {
         std::int32_t nReady = -1;
-
+        activeEvt.resize(m_evts.size());
         nReady = ::epoll_wait(m_epollFd, activeEvt.data(), activeEvt.size(), toInMilliSeconds);
         //Upon timeout nReady is ZERO and -1 Upon Failure.
         if(nReady > 0) {
@@ -172,52 +170,6 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                 //Descriptor is ready for Write
                 std::cout << "line: " << __LINE__ << " EPOLLOUT is set for serviceType: " << serviceType << " channel: " << Fd << std::endl;
                 switch(serviceType) {
-                    case noor::ServiceType::Tcp_Web_Server_Service:
-                    {
-                        //New Web Connection
-                        std::int32_t newFd = -1;
-                        struct sockaddr_in addr;
-                        socklen_t addr_len = sizeof(addr);
-                        newFd = ::accept(Fd, (struct sockaddr *)&addr, &addr_len);
-                        // new connection is accepted successfully.
-
-                        if(newFd > 0) {
-                            std::uint16_t PORT = ntohs(addr.sin_port);
-                            std::string IP(inet_ntoa(addr.sin_addr));
-
-                            if(!m_services.insert(std::make_pair(noor::ServiceType::Tcp_Web_Client_Connected_Service , std::make_unique<TcpClient>(newFd, IP, PORT))).second) {
-                                //Unable to insert the instance into container.
-                                std::cout << "line: " << __LINE__ << " element for Key: " << serviceType << " is already present" << std::endl;
-                                return(-1);
-                            }
-                            std::cout << "line: " << __LINE__ << " Tcp_Web_Client_Connected_Service and registered to epoll " << std::endl;
-                            RegisterToEPoll(noor::ServiceType::Tcp_Web_Client_Connected_Service);
-                        }
-                    }
-                    break;
-                    case noor::ServiceType::Tcp_Device_Server_Service:
-                    {
-                        std::int32_t newFd = -1;
-                        struct sockaddr_in addr;
-                        socklen_t addr_len = sizeof(addr);
-                        newFd = ::accept(Fd, (struct sockaddr *)&addr, &addr_len);
-                        std::cout << "line: " << __LINE__ << " value of newFd: " << newFd << std::endl;
-                        // new connection is accepted successfully.
-
-                        if(newFd > 0) {
-                            std::uint16_t PORT = ntohs(addr.sin_port);
-                            std::string IP(inet_ntoa(addr.sin_addr));
-                            std::cout<< "line: " << __LINE__ << " new client for TCP server IP: " << IP <<" PORT: " << PORT << " FD: " << newFd << std::endl;
-
-                            if(!m_services.insert(std::make_pair(noor::ServiceType::Tcp_Device_Client_Connected_Service , std::make_unique<TcpClient>(newFd, IP, PORT))).second) {
-                                //Unable to insert the instance into container.
-                                std::cout << "line: " << __LINE__ << " element for Key: " << serviceType << " is already present" << std::endl;
-                                return(-1);
-                            }
-                            RegisterToEPoll(noor::ServiceType::Tcp_Device_Client_Connected_Service);
-                        }
-                    }
-                    break;
                     case noor::ServiceType::Tcp_Device_Client_Service_Async:
                     {
                         do {
@@ -755,9 +707,6 @@ std::int32_t noor::Uniimage::RegisterToEPoll(noor::ServiceType serviceType) {
     if((serviceType == noor::ServiceType::Tcp_Device_Client_Service_Async) ||
        (serviceType == noor::ServiceType::Tcp_Device_Console_Client_Service_Async) ||
        (serviceType == noor::ServiceType::Tls_Tcp_Device_Rest_Client_Service_Async) ||
-       /*
-       (serviceType == noor::ServiceType::Tcp_Device_Server_Service) ||
-       (serviceType == noor::ServiceType::Tcp_Web_Server_Service) ||*/
        (serviceType == noor::ServiceType::Tls_Tcp_Device_Rest_Client_Service_Sync)) {
         evt.events = EPOLLOUT | EPOLLERR | EPOLLHUP;
     } else {
