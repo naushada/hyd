@@ -420,11 +420,11 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                                !http.uri().compare(0, 14, "/api/v1/db/get") ||
                                !http.uri().compare(0, 15, "/api/v1/db/exec")) {
                                 std::string srNo;
-                                auto &svc = GetService(noor::ServiceType::Tcp_Device_Client_Connected_Service, srNo);
-                                svc->restC().uri(http.uri());
+                                auto &svc = *GetService(noor::ServiceType::Tcp_Device_Client_Connected_Service, srNo);
+                                svc.restC().uri(http.uri());
                                 std::string request;
-                                auto ret = svc->tcp_tx(svc->handle(), request);
-                                std::cout << "line: " << __LINE__ << " sending to device on channel: " << svc->handle() << " ret: " << ret << std::endl;
+                                auto ret = svc.tcp_tx(svc.handle(), request);
+                                std::cout << "line: " << __LINE__ << " sending to device on channel: " << svc.handle() << " ret: " << ret << std::endl;
                                 break;
                             }
 
@@ -715,23 +715,23 @@ std::int32_t noor::Uniimage::RegisterToEPoll(noor::ServiceType serviceType) {
  */
 std::unique_ptr<noor::Service>& noor::Uniimage::GetService(noor::ServiceType serviceType) {
     auto it = m_services.find(serviceType);
+    return(it->second);
+    #if 0
     if(it != m_services.end()) {
         return(it->second);
     }
+    #endif
+    
 }
 
-std::unique_ptr<noor::Service>& noor::Uniimage::GetService(noor::ServiceType serviceType, const std::string& serialNumber) {
+noor::Service* noor::Uniimage::GetService(noor::ServiceType serviceType, const std::string& serialNumber) {
     auto it = m_services.equal_range(serviceType);
-    try {
-        for(auto &ent = it.first; ent != it.second; ++ent) {
-            if(serialNumber.length() && !serialNumber.compare(ent->second->serialNo())) {
-                return(ent->second);
-            }
+    for(auto &ent = it.first; ent != it.second; ++ent) {
+        if(serialNumber.length() && !serialNumber.compare(ent->second->serialNo())) {
+            return(ent->second.get());
         }
-        //throw an exception
-    } catch (const std::invalid_argument& e) {
-        std::cout << "line: " << __LINE__ << " Exception for invalid argument " << std::endl;
     }
+    return(nullptr);
 }
 
 void noor::Uniimage::DeleteService(noor::ServiceType serviceType, const std::int32_t& channel) {
