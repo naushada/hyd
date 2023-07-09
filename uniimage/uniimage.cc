@@ -348,6 +348,29 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                         }
                     }
                     break;
+                    case noor::ServiceType::Tls_Tcp_Device_Server_Service:
+                    {
+                        std::int32_t newFd = -1;
+                        struct sockaddr_in addr;
+                        socklen_t addr_len = sizeof(addr);
+                        newFd = ::accept(Fd, (struct sockaddr *)&addr, &addr_len);
+                        std::cout << "line: " << __LINE__ << " value of newFd: " << newFd << std::endl;
+                        // new connection is accepted successfully.
+
+                        if(newFd > 0) {
+                            std::uint16_t PORT = ntohs(addr.sin_port);
+                            std::string IP(inet_ntoa(addr.sin_addr));
+                            std::cout<< "line: " << __LINE__ << " new client for TCP server IP: " << IP <<" PORT: " << PORT << " FD: " << newFd << std::endl;
+                            auto &svc = GetService(serviceType);
+                            std::string cert, pkey;
+
+                            svc->tls().init(newFd, cert, pkey);
+                            svc->tls().server();
+                            m_services.insert(std::make_pair(noor::ServiceType::Tls_Tcp_Device_Client_Connected_Service , std::make_unique<TcpClient>(newFd, IP, PORT)));
+                            RegisterToEPoll(noor::ServiceType::Tls_Tcp_Device_Client_Connected_Service);
+                        }
+                    }
+                    break;
                     case noor::ServiceType::Tcp_Device_Console_Server_Service:
                     {
                         std::int32_t newFd = -1;
@@ -365,6 +388,32 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                     }
                     break;
                     case noor::ServiceType::Tcp_Device_Client_Connected_Service:
+                    {
+                        do {
+                            //Data is availabe for read. --- tcp_rx()
+                            std::string request("");
+                            auto &svc = GetService(serviceType);
+                            auto result = svc->tcp_rx(Fd, request);
+                            std::cout << "line: " << __LINE__ << " result: " << result << " connected client " << std::endl;
+
+                            if(!result) {
+                                //TCP Connection is closed.
+                                std::cout << "line: " << __LINE__ << " closing the client connection " << std::endl;
+                                DeleteService(serviceType, Fd);
+                                DeRegisterFromEPoll(Fd);
+                                break;
+                            }
+                            json jobj = json::parse(request);
+                            auto srNumber = jobj["serialNumber"].get<std::string>();
+                            //learn the serial number now.
+                            svc->serialNumber(srNumber);
+                            getResponseCache().insert(std::pair(srNumber, request));
+                            std::cout << "line: " << __LINE__ << " serialNumber: " << srNumber << " received from device over TCP : " << request << std::endl;
+
+                        }while(0);
+                    }
+                    break;
+                    case noor::ServiceType::Tls_Tcp_Device_Client_Connected_Service:
                     {
                         do {
                             //Data is availabe for read. --- tcp_rx()
@@ -1091,6 +1140,7 @@ int main(std::int32_t argc, char *argv[]) {
         }
 
         inst.CreateServiceAndRegisterToEPoll(noor::ServiceType::Tcp_Device_Server_Service, config["server-ip"], std::stoi(config["server-port"]));
+        inst.CreateServiceAndRegisterToEPoll(noor::ServiceType::Tls_Tcp_Device_Server_Service, config["server-ip"], std::stoi(config["server-port"]));
         inst.CreateServiceAndRegisterToEPoll(noor::ServiceType::Tcp_Device_Console_Server_Service, config["server-ip"], consolePort);
         inst.CreateServiceAndRegisterToEPoll(noor::ServiceType::Tcp_Web_Server_Service, config["server-ip"], std::stoi(config["web-port"]));
     }
