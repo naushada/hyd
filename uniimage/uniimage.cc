@@ -78,12 +78,7 @@ std::int32_t noor::Uniimage::CreateServiceAndRegisterToEPoll(noor::ServiceType s
                 RegisterToEPoll(serviceType);
             }
             break;
-            case noor::ServiceType::Unix_Data_Store_Client_Service_Sync:
-            {
-                m_services.insert(std::make_pair(serviceType, std::make_unique<UnixClient>()));
-                RegisterToEPoll(serviceType);
-            }
-            break;
+            
             default:
             {
                 //Default case 
@@ -184,10 +179,10 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                             //There's no error on the socket
                             struct epoll_event evt;
                             evt.events = EPOLLIN | EPOLLHUP | EPOLLERR;
-                            evt.data.u64 = std::uint64_t( Fd << 32) | std::uint64_t(serviceType);
+                            evt.data.u64 = std::uint64_t(Fd) << 32 | std::uint64_t(serviceType);
                             
                             auto ret = ::epoll_ctl(m_epollFd, EPOLL_CTL_MOD, Fd, &evt);
-
+                            (void)ret;
                             auto& svc = GetService(serviceType);
                             svc->connected_client(noor::client_connection::Connected);
 
@@ -229,10 +224,10 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                             //There's no error on the socket
                             struct epoll_event evt;
                             evt.events = EPOLLIN | EPOLLHUP | EPOLLERR;
-                            evt.data.u64 = std::uint64_t( Fd << 32) | std::uint64_t(serviceType);
+                            evt.data.u64 = std::uint64_t(Fd) << 32 | std::uint64_t(serviceType);
                             
                             auto ret = ::epoll_ctl(m_epollFd, EPOLL_CTL_MOD, Fd, &evt);
-
+                            (void)ret;
                             auto& svc = GetService(serviceType);
                             svc->connected_client(noor::client_connection::Connected);
                             //do a TLS Hand shake
@@ -275,10 +270,10 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                             //There's no error on the socket
                             struct epoll_event evt;
                             evt.events = EPOLLIN | EPOLLHUP | EPOLLERR;
-                            evt.data.u64 = std::uint64_t( Fd << 32) | std::uint64_t(serviceType);
+                            evt.data.u64 = std::uint64_t(Fd) << 32 | std::uint64_t(serviceType);
                             
                             auto ret = ::epoll_ctl(m_epollFd, EPOLL_CTL_MOD, Fd, &evt);
-
+                            (void)ret;
                         } while(0);
                     }
                     break;
@@ -292,10 +287,10 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
 
                         struct epoll_event evt;
                         evt.events = EPOLLIN | EPOLLHUP | EPOLLERR;
-                        evt.data.u64 = std::uint64_t( Fd << 32) | std::uint64_t(serviceType);
+                        evt.data.u64 = std::uint64_t(Fd) << 32 | std::uint64_t(serviceType);
                         
                         auto ret = ::epoll_ctl(m_epollFd, EPOLL_CTL_MOD, Fd, &evt);
-
+                        (void)ret;
                         //Get Token for Rest Client
                         json jobj = json::object();
                         jobj["login"] = "test";
@@ -304,6 +299,7 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                         auto req = svc->restC().getToken(jobj.dump());
                         std::cout << "line: " << __LINE__ << " request sent: " << std::endl << req << std::endl;
                         auto len = svc->tls().write(req);
+                        (void)len;
                     }
                     break;
                     default:
@@ -690,7 +686,7 @@ std::int32_t noor::Uniimage::RegisterToEPoll(noor::ServiceType serviceType) {
 
     std::cout << "line: " << __LINE__ << " handle: " << inst->handle() << " serviceType: " << serviceType  << " added to epoll" << std::endl;
     std::uint64_t dd = std::uint64_t(inst->handle());
-    evt.data.u64 = std::uint64_t( dd << 32) | std::uint64_t(serviceType);
+    evt.data.u64 = std::uint64_t(dd) << 32 | std::uint64_t(serviceType);
 
     if((serviceType == noor::ServiceType::Tcp_Device_Client_Service_Async) ||
        (serviceType == noor::ServiceType::Tcp_Device_Console_Client_Service_Async) ||
@@ -1753,9 +1749,9 @@ std::int32_t noor::Service::web_rx(std::int32_t channel, std::string& data) {
         std::cout << "line: " << __LINE__ << " URI: "   << http.uri()    << std::endl;
         std::cout << "line: " << __LINE__ << " Header " << http.header() << std::endl;
         std::cout << "line: " << __LINE__ << " Body "   << http.body()   << std::endl;
-        std::uint32_t offset = 0;
+        std::int32_t offset = 0;
         auto cl = http.value("Content-Length");
-        size_t payload_len = 0;
+        std::int32_t payload_len = 0;
 
         if(!cl.length()) {
             std::cout << "line: " << __LINE__ << " Content-Length is not present" << std::endl;
@@ -1820,9 +1816,9 @@ std::int32_t noor::Service::web_rx(std::string& data) {
         std::cout << "line: " << __LINE__ << " URI: "   << http.uri()    << std::endl;
         std::cout << "line: " << __LINE__ << " Header " << http.header() << std::endl;
         std::cout << "line: " << __LINE__ << " Body "   << http.body()   << std::endl;
-        std::uint32_t offset = 0;
+        std::int32_t offset = 0;
         auto cl = http.value("Content-Length");
-        size_t payload_len = 0;
+        std::int32_t payload_len = 0;
 
         if(!cl.length()) {
             std::cout << "line: " << __LINE__ << " Content-Length is not present" << std::endl;
@@ -1832,7 +1828,7 @@ std::int32_t noor::Service::web_rx(std::string& data) {
         } else {
             std::cout << "function: "<< __FUNCTION__ << " line: " << __LINE__ <<" value of Content-Length " << cl << std::endl;
             payload_len = std::stoi(cl);
-            if(len == (payload_len + http.header().length())) {
+            if(len == (payload_len + std::int32_t(http.header().length()))) {
                 //We have received the full HTTP packet
                 data = ss;
                 return(data.length());
@@ -1890,7 +1886,7 @@ std::int32_t noor::Service::udp_rx(std::string& data) {
         istrstr.rdbuf()->pubsetbuf(arr.data(), len);
         std::cout << "\nline: " << __LINE__ << " to be received bytes: " << len <<std::endl;
         istrstr.read(reinterpret_cast<char *>(&payload_len), sizeof(payload_len));
-        std::uint32_t offset = 0;
+        std::int32_t offset = 0;
         payload_len = ntohl(payload_len) + 4; //+4 for 4bytes of length prepended to payload
         std::cout << "line: " << __LINE__ << " udp payload length: " << payload_len << std::endl;
 
@@ -1933,7 +1929,6 @@ std::int32_t noor::Service::tcp_server(const std::string& IP, std::uint16_t PORT
         m_inet_server.sin_addr.s_addr = inet_addr(IP.c_str());
     }
     memset(m_inet_server.sin_zero, 0, sizeof(m_inet_server.sin_zero));
-    auto len = sizeof(m_inet_server);
 
     std::int32_t channel = ::socket(AF_INET, SOCK_STREAM|SOCK_NONBLOCK, IPPROTO_TCP);
     if(channel < 0) {

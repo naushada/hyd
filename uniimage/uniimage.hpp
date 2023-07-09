@@ -242,7 +242,7 @@ class noor::Tls {
             }
 
             std::stringstream ss;
-            std::int32_t offset = 0;
+            std::uint32_t offset = 0;
             std::string tmp;
 
             if(len < 2048) {
@@ -389,12 +389,12 @@ class noor::Service {
 
         virtual std::string onReceive(std::string in) {
             std::cout << "line: " << __LINE__ << "Must be overriden " << std::endl;
-            return(std::string());
+            return(in);
         }
 
         virtual std::int32_t onClose(std::string in) {
             std::cout << "line: " << __LINE__ << "Must be overriden " << std::endl;
-            return(-1);
+            return(in.length());
         }
 
         void ip(std::string IP) {
