@@ -496,7 +496,12 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                                 break;
                             }
                             std::cout << "line: " << __LINE__ << " serviceType: " << serviceType << " received from DMS: " << request << std::endl;
-                            //Pass on over TLS to Device
+                            {
+                                //Pass on over TLS to Device
+                                auto &svc = GetService(noor::ServiceType::Tls_Tcp_Device_Rest_Client_Service_Sync);
+                                svc->tls().write(request);
+                            }
+                            
                             break;
                         }while(0);
                     }
@@ -547,14 +552,15 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                             std::string result("");
                             auto req = svc->restC().processResponse(out, body, result);
                             if(result.length()) {
-                                
                                 //push result to remote server
                                 json jobj = json::parse(result);
-                                auto srNumber = jobj["serialNumber"].get<std::string>();
-                                //The key is the serial number
-                                svc->cache().insert(std::pair(srNumber, result));
-
-                                std::cout << "line: " << __LINE__ << " serialNumber: " << srNumber << std::endl;
+                                
+                                if(jobj["serialNumber"] != nullptr) {
+                                    auto srNumber = jobj["serialNumber"].get<std::string>();
+                                    //The key is the serial number
+                                    svc->cache().insert(std::pair(srNumber, result));
+                                    std::cout << "line: " << __LINE__ << " serialNumber: " << srNumber << std::endl;
+                                }
                                 {
                                     auto& svc = GetService(noor::ServiceType::Tcp_Device_Client_Service_Async);
                                     auto channel = svc->handle();
@@ -564,8 +570,8 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                                             std::cout << "line: " << __LINE__ << " sent to TCP Server len: " << len << " for serviceType: " << noor::ServiceType::Tcp_Device_Client_Service_Async << " result: " << result << std::endl; 
                                         }
                                     }
+                                    break;
                                 }
-                                
                             } else if(req.length()) {
                                 ret = svc->tls().write(req);
                                 if(ret < 0) {
