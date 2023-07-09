@@ -178,7 +178,7 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                             std::cout << "line: " << __LINE__ << " client is connected successfully for serviceType: " << serviceType << " channel: " << Fd << std::endl;
                             //There's no error on the socket
                             struct epoll_event evt;
-                            evt.events = EPOLLIN | EPOLLHUP | EPOLLERR;
+                            evt.events = EPOLLIN | EPOLLHUP | EPOLLERR | EPOLLRDHUP;
                             evt.data.u64 = std::uint64_t(Fd) << 32 | std::uint64_t(serviceType);
                             
                             auto ret = ::epoll_ctl(m_epollFd, EPOLL_CTL_MOD, Fd, &evt);
@@ -223,7 +223,7 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                             std::cout << "line: " << __LINE__ << " Tls Tcp client is connected successfully " << std::endl;
                             //There's no error on the socket
                             struct epoll_event evt;
-                            evt.events = EPOLLIN | EPOLLHUP | EPOLLERR;
+                            evt.events = EPOLLIN | EPOLLHUP | EPOLLERR |EPOLLRDHUP;
                             evt.data.u64 = std::uint64_t(Fd) << 32 | std::uint64_t(serviceType);
                             
                             auto ret = ::epoll_ctl(m_epollFd, EPOLL_CTL_MOD, Fd, &evt);
@@ -269,7 +269,7 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
 
                             //There's no error on the socket
                             struct epoll_event evt;
-                            evt.events = EPOLLIN | EPOLLHUP | EPOLLERR;
+                            evt.events = EPOLLIN | EPOLLHUP | EPOLLERR | EPOLLRDHUP;
                             evt.data.u64 = std::uint64_t(Fd) << 32 | std::uint64_t(serviceType);
                             
                             auto ret = ::epoll_ctl(m_epollFd, EPOLL_CTL_MOD, Fd, &evt);
@@ -286,7 +286,7 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                         svc->tls().client();
 
                         struct epoll_event evt;
-                        evt.events = EPOLLIN | EPOLLHUP | EPOLLERR;
+                        evt.events = EPOLLIN | EPOLLHUP | EPOLLERR|EPOLLRDHUP;
                         evt.data.u64 = std::uint64_t(Fd) << 32 | std::uint64_t(serviceType);
                         
                         auto ret = ::epoll_ctl(m_epollFd, EPOLL_CTL_MOD, Fd, &evt);
@@ -589,7 +589,7 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                     }
                 }
                 
-            } else if(ent.events == EPOLLHUP) {
+            } else if(ent.events == EPOLLRDHUP) {
                 //Connection is closed by other end
                 switch(serviceType) {
                     case noor::ServiceType::Tcp_Device_Client_Connected_Service:
@@ -692,9 +692,9 @@ std::int32_t noor::Uniimage::RegisterToEPoll(noor::ServiceType serviceType) {
        (serviceType == noor::ServiceType::Tcp_Device_Console_Client_Service_Async) ||
        (serviceType == noor::ServiceType::Tls_Tcp_Device_Rest_Client_Service_Async) ||
        (serviceType == noor::ServiceType::Tls_Tcp_Device_Rest_Client_Service_Sync)) {
-        evt.events = EPOLLOUT | EPOLLERR | EPOLLHUP;
+        evt.events = EPOLLOUT | EPOLLERR | EPOLLRDHUP | EPOLLHUP;
     } else {
-        evt.events = EPOLLIN | EPOLLERR | EPOLLHUP;
+        evt.events = EPOLLIN | EPOLLERR | EPOLLHUP|EPOLLRDHUP;
     }
 
     if(::epoll_ctl(m_epollFd, EPOLL_CTL_ADD, inst->handle(), &evt) == -1)
