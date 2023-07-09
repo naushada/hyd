@@ -180,9 +180,16 @@ class noor::Uniimage {
         std::unordered_map<std::string, std::string> m_cache;
 };
 
-
+/**
+ * @brief 
+ * 
+ */
 class noor::Tls {
     public:
+        /**
+         * @brief Construct a new Tls object
+         * 
+         */
         Tls(): m_method(SSLv23_client_method()), m_ssl_ctx(SSL_CTX_new(m_method), SSL_CTX_free), m_ssl(SSL_new(m_ssl_ctx.get()), SSL_free) {
 
             OpenSSL_add_all_algorithms();
@@ -197,22 +204,61 @@ class noor::Tls {
             
         }
 
-        std::int32_t init(std::int32_t fd) {
+        /**
+         * @brief 
+         * 
+         * @param fd 
+         * @param cert 
+         * @param pkey 
+         * @return std::int32_t 
+         */
+        std::int32_t init(std::int32_t fd, const std::string &cert = std::string(), const std::string& pkey = std::string()) {
             std::int32_t rc = SSL_set_fd(m_ssl.get(), fd);
+            //For tls server
+            if(cert.length() && pkey.length()) {
+
+                if(SSL_CTX_use_certificate_file(m_ssl_ctx.get(), cert.c_str(), SSL_FILETYPE_PEM) <= 0) {
+                    ERR_print_errors_fp(stderr);
+                    exit(EXIT_FAILURE);
+                }
+
+                if(SSL_CTX_use_PrivateKey_file(m_ssl_ctx.get(), pkey.c_str(), SSL_FILETYPE_PEM) <= 0 ) {
+                    ERR_print_errors_fp(stderr);
+                    exit(EXIT_FAILURE);
+                }
+            }
+
             return(rc);
         }
 
+        /**
+         * @brief 
+         * 
+         * @return std::int32_t 
+         */
         std::int32_t client() {
             std::int32_t rc = SSL_connect(m_ssl.get());
             return(rc);
         }
 
+        /**
+         * @brief 
+         * 
+         * @return std::int32_t 
+         */
         std::int32_t server() {
             std::int32_t rc = -1;
-
+            rc = SSL_accept(m_ssl.get());
             return(rc);
         }
 
+        /**
+         * @brief 
+         * 
+         * @param out 
+         * @param len 
+         * @return std::int32_t 
+         */
         std::int32_t peek(std::string& out, std::uint32_t len = 2048) {
             int rc = -1;
             std::array<char, 2048> ss;
@@ -227,6 +273,13 @@ class noor::Tls {
 
         }/*peek*/
 
+        /**
+         * @brief 
+         * 
+         * @param out 
+         * @param len 
+         * @return std::int32_t 
+         */
         std::int32_t read(std::string& out, std::uint32_t len = 2048) {
             std::int32_t rc = -1;
             std::array<char, 2048> in;
@@ -279,6 +332,12 @@ class noor::Tls {
 
         }/*read*/
 
+        /**
+         * @brief 
+         * 
+         * @param out 
+         * @return std::int32_t 
+         */
         std::int32_t write(const std::string& out) {
             std::int32_t rc = -1;
             size_t offset = 0;
@@ -298,10 +357,20 @@ class noor::Tls {
 
         }/*write*/
 
+        /**
+         * @brief 
+         * 
+         * @return auto& 
+         */
         auto& ssl_ctx() {
             return(*(m_ssl_ctx.get()));
         }
 
+        /**
+         * @brief 
+         * 
+         * @return auto& 
+         */
         auto& ssl() {
             return(*(m_ssl.get()));
         }
@@ -312,6 +381,10 @@ class noor::Tls {
         std::unique_ptr<SSL, decltype(&SSL_free)> m_ssl;
 };
 
+/**
+ * @brief 
+ * 
+ */
 class noor::RestClient {
     public:
         RestClient() : m_cookies(""), m_uri("") {}
