@@ -171,6 +171,7 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                                     auto IP = inst->ip();
                                     auto PORT = inst->port();
                                     DeRegisterFromEPoll(Fd);
+                                    DeleteService(serviceType, Fd);
                                     CreateServiceAndRegisterToEPoll(serviceType, IP, PORT, true);
                                     break;
                                 }
@@ -178,7 +179,7 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                             std::cout << "line: " << __LINE__ << " client is connected successfully for serviceType: " << serviceType << " channel: " << Fd << std::endl;
                             //There's no error on the socket
                             struct epoll_event evt;
-                            evt.events = EPOLLIN | EPOLLHUP | EPOLLERR | EPOLLRDHUP;
+                            evt.events = EPOLLIN | EPOLLRDHUP;
                             evt.data.u64 = std::uint64_t(Fd) << 32 | std::uint64_t(serviceType);
                             
                             auto ret = ::epoll_ctl(m_epollFd, EPOLL_CTL_MOD, Fd, &evt);
@@ -216,6 +217,7 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                                     auto IP = inst->ip();
                                     auto PORT = inst->port();
                                     DeRegisterFromEPoll(Fd);
+                                    DeleteService(serviceType, Fd);
                                     CreateServiceAndRegisterToEPoll(serviceType, IP, PORT, true);
                                     break;
                                 }
@@ -223,7 +225,7 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                             std::cout << "line: " << __LINE__ << " Tls Tcp client is connected successfully " << std::endl;
                             //There's no error on the socket
                             struct epoll_event evt;
-                            evt.events = EPOLLIN | EPOLLHUP | EPOLLERR |EPOLLRDHUP;
+                            evt.events = EPOLLIN |EPOLLRDHUP;
                             evt.data.u64 = std::uint64_t(Fd) << 32 | std::uint64_t(serviceType);
                             
                             auto ret = ::epoll_ctl(m_epollFd, EPOLL_CTL_MOD, Fd, &evt);
@@ -262,6 +264,7 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                                     auto IP = inst->ip();
                                     auto PORT = inst->port();
                                     DeRegisterFromEPoll(Fd);
+                                    DeleteService(serviceType, Fd);
                                     CreateServiceAndRegisterToEPoll(serviceType, IP, PORT, true);
                                     break;
                                 }
@@ -269,7 +272,7 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
 
                             //There's no error on the socket
                             struct epoll_event evt;
-                            evt.events = EPOLLIN | EPOLLHUP | EPOLLERR | EPOLLRDHUP;
+                            evt.events = EPOLLIN | EPOLLRDHUP;
                             evt.data.u64 = std::uint64_t(Fd) << 32 | std::uint64_t(serviceType);
                             
                             auto ret = ::epoll_ctl(m_epollFd, EPOLL_CTL_MOD, Fd, &evt);
@@ -286,7 +289,7 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                         svc->tls().client();
 
                         struct epoll_event evt;
-                        evt.events = EPOLLIN | EPOLLHUP | EPOLLERR|EPOLLRDHUP;
+                        evt.events = EPOLLIN |EPOLLRDHUP;
                         evt.data.u64 = std::uint64_t(Fd) << 32 | std::uint64_t(serviceType);
                         
                         auto ret = ::epoll_ctl(m_epollFd, EPOLL_CTL_MOD, Fd, &evt);
