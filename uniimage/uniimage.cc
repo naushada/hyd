@@ -148,7 +148,7 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
             std::uint32_t Fd = std::uint32_t(ent.data.u64 >> 32 & 0xFFFFFFFF);
             noor::ServiceType serviceType = noor::ServiceType(ent.data.u64 & 0xFFFFFFFF);
 
-            if(ent.events == EPOLLOUT) {
+            if(ent.events & EPOLLOUT) {
                 //Descriptor is ready for Write
                 std::cout << "line: " << __LINE__ << " EPOLLOUT is set for serviceType: " << serviceType << " channel: " << Fd << std::endl;
                 switch(serviceType) {
@@ -308,7 +308,7 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                     }
                     break;
                 }
-            } else if(ent.events == EPOLLIN) {
+            } else if(ent.events & EPOLLIN) {
                 //file descriptor is ready for read.
                 switch(serviceType) {
                     case noor::ServiceType::Tcp_Web_Server_Service:
@@ -638,7 +638,7 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                     }
                 }
                 
-            } else if(ent.events == EPOLLRDHUP) {
+            } else if(ent.events & EPOLLRDHUP) {
                 //Connection is closed by other end
                 switch(serviceType) {
                     case noor::ServiceType::Tcp_Device_Client_Connected_Service:
@@ -681,9 +681,9 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                         DeRegisterFromEPoll(Fd);
                     }
                 }
-            } else if(ent.events == EPOLLERR) {
+            } else if(ent.events & EPOLLERR) {
                 std::cout << "line: " << __LINE__ << " epollerr events: " << ent.events  << " Fd:" << Fd << " serviceType: " << serviceType << std::endl;
-            } else if(ent.events == EPOLLONESHOT) {
+            } else if(ent.events & EPOLLONESHOT) {
                 std::cout << "line: " << __LINE__ << " oneshots events: " << ent.events << " Fd:" << Fd << " serviceType: " << serviceType << std::endl;
             } else {
                 std::cout << "line: " << __LINE__ << " unhandled events: " << ent.events << " Fd:" << Fd << " serviceType: " << serviceType << std::endl;
@@ -741,11 +741,12 @@ std::int32_t noor::Uniimage::RegisterToEPoll(noor::ServiceType serviceType) {
        (serviceType == noor::ServiceType::Tcp_Device_Console_Client_Service_Async) ||
        (serviceType == noor::ServiceType::Tls_Tcp_Device_Rest_Client_Service_Async) ||
        (serviceType == noor::ServiceType::Tls_Tcp_Device_Rest_Client_Service_Sync)) {
-        evt.events = EPOLLOUT | EPOLLERR | EPOLLRDHUP | EPOLLHUP;
+        //evt.events = EPOLLOUT | EPOLLERR | EPOLLRDHUP | EPOLLHUP;
+        evt.events = EPOLLOUT|EPOLLRDHUP;
         std::cout << "line: " << __LINE__ << " value of events: " << evt.events << " serviceType: " << serviceType << std::endl;
 
     } else {
-        evt.events = EPOLLIN | EPOLLERR | EPOLLHUP | EPOLLRDHUP;
+        evt.events = EPOLLIN | EPOLLRDHUP;
         std::cout << "line: " << __LINE__ << " value of events: " << evt.events << " serviceType: " << serviceType << std::endl;
     }
 
