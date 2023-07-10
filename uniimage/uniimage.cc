@@ -318,12 +318,11 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                         struct sockaddr_in addr;
                         socklen_t addr_len = sizeof(addr);
                         newFd = ::accept(Fd, (struct sockaddr *)&addr, &addr_len);
-                        // new connection is accepted successfully.
 
                         if(newFd > 0) {
                             std::uint16_t PORT = ntohs(addr.sin_port);
                             std::string IP(inet_ntoa(addr.sin_addr));
-
+                            std::cout<< "line: " << __LINE__ << " new client from WEB IP: " << IP <<" PORT: " << PORT << " FD: " << newFd << std::endl;
                             m_services.insert(std::make_pair(noor::ServiceType::Tcp_Web_Client_Connected_Service , std::make_unique<TcpClient>(newFd, IP, PORT)));
                             RegisterToEPoll(noor::ServiceType::Tcp_Web_Client_Connected_Service);
                         }
@@ -335,13 +334,13 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                         struct sockaddr_in addr;
                         socklen_t addr_len = sizeof(addr);
                         newFd = ::accept(Fd, (struct sockaddr *)&addr, &addr_len);
-                        std::cout << "line: " << __LINE__ << " value of newFd: " << newFd << std::endl;
+                        
                         // new connection is accepted successfully.
 
                         if(newFd > 0) {
                             std::uint16_t PORT = ntohs(addr.sin_port);
                             std::string IP(inet_ntoa(addr.sin_addr));
-                            std::cout<< "line: " << __LINE__ << " new client for TCP server IP: " << IP <<" PORT: " << PORT << " FD: " << newFd << std::endl;
+                            std::cout<< "line: " << __LINE__ << " new client from device IP: " << IP <<" PORT: " << PORT << " FD: " << newFd << std::endl;
 
                             m_services.insert(std::make_pair(noor::ServiceType::Tcp_Device_Client_Connected_Service , std::make_unique<TcpClient>(newFd, IP, PORT)));
                             RegisterToEPoll(noor::ServiceType::Tcp_Device_Client_Connected_Service);
@@ -682,11 +681,11 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                     }
                 }
             } else if(ent.events == EPOLLERR) {
-                std::cout << "line: " << __LINE__ << " epollerr events: " << ent.events << std::endl;
+                std::cout << "line: " << __LINE__ << " epollerr events: " << ent.events  << " Fd:" << Fd << " serviceType: " << serviceType << std::endl;
             } else if(ent.events == EPOLLONESHOT) {
-                std::cout << "line: " << __LINE__ << " oneshots events: " << ent.events << std::endl;
+                std::cout << "line: " << __LINE__ << " oneshots events: " << ent.events << " Fd:" << Fd << " serviceType: " << serviceType << std::endl;
             } else {
-                std::cout << "line: " << __LINE__ << " unhandled events: " << ent.events << std::endl;
+                std::cout << "line: " << __LINE__ << " unhandled events: " << ent.events << " Fd:" << Fd << " serviceType: " << serviceType << std::endl;
             }
         }
     }
