@@ -742,11 +742,11 @@ std::int32_t noor::Uniimage::RegisterToEPoll(noor::ServiceType serviceType) {
        (serviceType == noor::ServiceType::Tls_Tcp_Device_Rest_Client_Service_Async) ||
        (serviceType == noor::ServiceType::Tls_Tcp_Device_Rest_Client_Service_Sync)) {
         evt.events = EPOLLOUT | EPOLLERR | EPOLLRDHUP | EPOLLHUP;
-        std::cout << "line: " << __LINE__ << " value of events: " << evt.events << std::endl;
+        std::cout << "line: " << __LINE__ << " value of events: " << evt.events << " serviceType: " << serviceType << std::endl;
 
     } else {
-        evt.events = EPOLLIN | EPOLLERR | EPOLLHUP|EPOLLRDHUP;
-        std::cout << "line: " << __LINE__ << " value of events: " << evt.events << std::endl;
+        evt.events = EPOLLIN | EPOLLERR | EPOLLHUP | EPOLLRDHUP;
+        std::cout << "line: " << __LINE__ << " value of events: " << evt.events << " serviceType: " << serviceType << std::endl;
     }
 
     if(::epoll_ctl(m_epollFd, EPOLL_CTL_ADD, inst->handle(), &evt) == -1)

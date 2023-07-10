@@ -113,9 +113,9 @@ namespace noor {
             Unix_Data_Store_Client_Service_Sync = 1,
             
             // Async --- Usages Non-Blocking Socket
-            Tcp_Device_Console_Client_Service_Async = 20,
+            Tcp_Device_Console_Server_Service = 20,
+            Tcp_Device_Console_Client_Service_Async,
             Tcp_Device_Console_Client_Service_Sync,
-            Tcp_Device_Console_Server_Service,
             Tcp_Device_Console_Connected_Service,
 
             Tcp_Web_Server_Service = 40,
