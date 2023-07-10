@@ -122,12 +122,12 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
 
     while(true) {
         std::int32_t nReady = -1;
-        activeEvt.resize(m_services.size());
+        activeEvt.resize(m_evts.size());
         nReady = ::epoll_wait(m_epollFd, activeEvt.data(), activeEvt.size(), toInMilliSeconds);
         //Upon timeout nReady is ZERO and -1 Upon Failure.
         if(nReady > 0) {
             activeEvt.resize(nReady);
-            std::cout << "line: " << __LINE__ << " nReady: " << nReady << " m_services.size(): " << m_services.size() << std::endl;
+            std::cout << __TIMESTAMP__ << " line: " << __LINE__ << " nReady: " << nReady << " m_services.size(): " << m_services.size() << std::endl;
         } else if(nReady < 0) {
             //Error is returned by epoll_wait
             if(EBADF == errno) {
@@ -145,12 +145,12 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
 
         for(auto it = activeEvt.begin(); it != activeEvt.end(); ++it) {
             auto ent = *it;
-            std::uint32_t Fd = std::uint32_t(ent.data.u64 >> 32 & 0xFFFFFFFF);
+            std::uint32_t Fd = std::uint32_t((ent.data.u64 >> 32) & 0xFFFFFFFF);
             noor::ServiceType serviceType = noor::ServiceType(ent.data.u64 & 0xFFFFFFFF);
 
             if(ent.events & EPOLLOUT) {
                 //Descriptor is ready for Write
-                std::cout << "line: " << __LINE__ << " EPOLLOUT is set for serviceType: " << serviceType << " channel: " << Fd << std::endl;
+                std::cout << __TIMESTAMP__ << " line: " << __LINE__ << " EPOLLOUT is set for serviceType: " << serviceType << " channel: " << Fd << std::endl;
                 switch(serviceType) {
                     case noor::ServiceType::Tcp_Device_Client_Service_Async:
                     {
@@ -166,7 +166,7 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                                 auto ret = getpeername(Fd, (struct sockaddr *)&peer, &sock_len);
                                 if(ret < 0 && errno == ENOTCONN) {
                                     //re-attemp connection now.
-                                    std::cout << "line: " << __LINE__ << " re-attempting the connection " << std::endl;
+                                    std::cout << __TIMESTAMP__ << " line: " << __LINE__ << " re-attempting the connection " << std::endl;
                                     auto& inst = GetService(serviceType);
                                     auto IP = inst->ip();
                                     auto PORT = inst->port();
@@ -176,7 +176,7 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                                     break;
                                 }
                             }
-                            std::cout << "line: " << __LINE__ << " client is connected successfully for serviceType: " << serviceType << " channel: " << Fd << std::endl;
+                            std::cout << __TIMESTAMP__ << " line: " << __LINE__ << " client is connected successfully for serviceType: " << serviceType << " channel: " << Fd << std::endl;
                             //There's no error on the socket
                             //struct epoll_event evt;
                             ent.events = EPOLLIN | EPOLLRDHUP;
@@ -212,7 +212,7 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                                 auto ret = getpeername(Fd, (struct sockaddr *)&peer, &sock_len);
                                 if(ret < 0 && errno == ENOTCONN) {
                                     //re-attemp connection now.
-                                    std::cout << "line: " << __LINE__ << " re-attempting the connection " << std::endl;
+                                    std::cout << __TIMESTAMP__ << " line: " << __LINE__ << " re-attempting the connection " << std::endl;
                                     auto& inst = GetService(serviceType);
                                     auto IP = inst->ip();
                                     auto PORT = inst->port();
@@ -260,6 +260,7 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                                 auto ret = getpeername(Fd, (struct sockaddr *)&peer, &sock_len);
                                 if(ret < 0 && errno == ENOTCONN) {
                                     //re-attemp connection now.
+                                    std::cout << __TIMESTAMP__ << " line: " << __LINE__ << " Tls Tcp client is connected successfully " << std::endl;
                                     auto& inst = GetService(serviceType);
                                     auto IP = inst->ip();
                                     auto PORT = inst->port();
@@ -685,11 +686,11 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                     }
                 }
             } else if(ent.events & EPOLLERR) {
-                std::cout << "line: " << __LINE__ << " epollerr events: " << ent.events  << " Fd:" << Fd << " serviceType: " << serviceType << std::endl;
+                std::cout << __TIMESTAMP__ << " line: " << __LINE__ << " epollerr events: " << ent.events  << " Fd:" << Fd << " serviceType: " << serviceType << std::endl;
             } else if(ent.events & EPOLLONESHOT) {
-                std::cout << "line: " << __LINE__ << " oneshots events: " << ent.events << " Fd:" << Fd << " serviceType: " << serviceType << std::endl;
+                std::cout << __TIMESTAMP__ << " line: " << __LINE__ << " oneshots events: " << ent.events << " Fd:" << Fd << " serviceType: " << serviceType << std::endl;
             } else {
-                std::cout << "line: " << __LINE__ << " unhandled events: " << ent.events << " Fd:" << Fd << " serviceType: " << serviceType << std::endl;
+                std::cout << __TIMESTAMP__ << " line: " << __LINE__ << " unhandled events: " << ent.events << " Fd:" << Fd << " serviceType: " << serviceType << std::endl;
             }
         }
     }
