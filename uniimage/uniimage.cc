@@ -360,12 +360,13 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                             std::uint16_t PORT = ntohs(addr.sin_port);
                             std::string IP(inet_ntoa(addr.sin_addr));
                             std::cout<< "line: " << __LINE__ << " new client for TCP server IP: " << IP <<" PORT: " << PORT << " FD: " << newFd << std::endl;
-                            auto &svc = GetService(serviceType);
-                            std::string cert, pkey;
-
-                            svc->tls().init(newFd, cert, pkey);
-                            svc->tls().server();
+                            
                             m_services.insert(std::make_pair(noor::ServiceType::Tls_Tcp_Device_Client_Connected_Service , std::make_unique<TcpClient>(newFd, IP, PORT)));
+                            auto &svc = GetService(noor::ServiceType::Tls_Tcp_Device_Client_Connected_Service);
+                            std::string cert, pkey;
+                            svc->tls().init(cert, pkey);
+                            svc->tls().server(newFd);
+
                             RegisterToEPoll(noor::ServiceType::Tls_Tcp_Device_Client_Connected_Service);
                         }
                     }
@@ -741,8 +742,11 @@ std::int32_t noor::Uniimage::RegisterToEPoll(noor::ServiceType serviceType) {
        (serviceType == noor::ServiceType::Tls_Tcp_Device_Rest_Client_Service_Async) ||
        (serviceType == noor::ServiceType::Tls_Tcp_Device_Rest_Client_Service_Sync)) {
         evt.events = EPOLLOUT | EPOLLERR | EPOLLRDHUP | EPOLLHUP;
+        std::cout << "line: " << __LINE__ << " value of events: " << evt.events << std::endl;
+
     } else {
         evt.events = EPOLLIN | EPOLLERR | EPOLLHUP|EPOLLRDHUP;
+        std::cout << "line: " << __LINE__ << " value of events: " << evt.events << std::endl;
     }
 
     if(::epoll_ctl(m_epollFd, EPOLL_CTL_ADD, inst->handle(), &evt) == -1)

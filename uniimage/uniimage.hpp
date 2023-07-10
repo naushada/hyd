@@ -212,25 +212,30 @@ class noor::Tls {
          * @param pkey 
          * @return std::int32_t 
          */
-        std::int32_t init(std::int32_t fd, const std::string &cert = std::string(), const std::string& pkey = std::string()) {
+        std::int32_t init(std::int32_t fd) {
             std::int32_t rc = SSL_set_fd(m_ssl.get(), fd);
-            //For tls server
-            if(cert.length() && pkey.length()) {
-
-                if(SSL_CTX_use_certificate_file(m_ssl_ctx.get(), cert.c_str(), SSL_FILETYPE_PEM) <= 0) {
-                    ERR_print_errors_fp(stderr);
-                    exit(EXIT_FAILURE);
-                }
-
-                if(SSL_CTX_use_PrivateKey_file(m_ssl_ctx.get(), pkey.c_str(), SSL_FILETYPE_PEM) <= 0 ) {
-                    ERR_print_errors_fp(stderr);
-                    exit(EXIT_FAILURE);
-                }
-            }
-
+            
             return(rc);
         }
 
+        std::int32_t init(const std::string &cert, const std::string& pkey) {
+            std::int32_t ret = -1;
+            //For tls server
+            if(cert.length() && pkey.length()) {
+
+                if((ret = SSL_CTX_use_certificate_file(m_ssl_ctx.get(), cert.c_str(), SSL_FILETYPE_PEM)) <= 0) {
+                    ERR_print_errors_fp(stderr);
+                    return(ret);
+                }
+
+                if((ret = SSL_CTX_use_PrivateKey_file(m_ssl_ctx.get(), pkey.c_str(), SSL_FILETYPE_PEM)) <= 0 ) {
+                    ERR_print_errors_fp(stderr);
+                    return(ret);
+                }
+            }
+
+            return(ret);
+        }
         /**
          * @brief 
          * 
@@ -246,8 +251,9 @@ class noor::Tls {
          * 
          * @return std::int32_t 
          */
-        std::int32_t server() {
+        std::int32_t server(std::int32_t fd) {
             std::int32_t rc = -1;
+            rc = SSL_set_fd(m_ssl.get(), fd);
             rc = SSL_accept(m_ssl.get());
             return(rc);
         }
