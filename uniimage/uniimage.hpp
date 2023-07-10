@@ -393,7 +393,7 @@ class noor::Tls {
  */
 class noor::RestClient {
     public:
-        RestClient() : m_cookies(""), m_uri("") {}
+        RestClient() : m_cookies(""), m_uri(""), m_deviceName("") {}
         ~RestClient() {}
         std::string getToken(const std::string& in);
         std::string authorizeToken(const std::string& in, const std::string& user);
@@ -404,10 +404,13 @@ class noor::RestClient {
         void uri(std::string path) { m_uri = path;}
         std::string cookies() const { return(m_cookies);}
         void cookies(std::string token) {m_cookies = token;}
+        void deviceName(std::string product) {m_deviceName = product;}
+        std::string deviceName() const { return(m_deviceName);}
 
     private:
         std::string m_cookies;
         std::string m_uri;
+        std::string m_deviceName;
 };
 
 class noor::Service {

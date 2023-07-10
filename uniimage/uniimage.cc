@@ -919,26 +919,67 @@ std::string noor::RestClient::processResponse(const std::string& http_header, co
         auto attmpts = json_object["data"]["attempts"].get<std::int32_t>();
         //auto attmpts = value;
         std::cout << "line: " << __LINE__ << " attempts: " << attmpts << std::endl;
-        return(registerDatapoints(
-            {
-                {"device"},
-                {"system.os"},
-                //Wan IP Address
-                {"net.interface.common[].ipv4.address"},
-                {"net.interface.cellular[]"},
-                //WiFi Mode
-                {"net.interface.wifi[w1].radio.mode"},
-                {"net.interface.wifi[w2].radio.mode"},
-                {"net.interface.wifi[w3].radio.mode"},
-                {"system.bootcheck.signature"}
-            }));
+        if(deviceName().length() && deviceName().compare("RX55")) {
+            return(registerDatapoints(
+                {
+                    {"device"},
+                    {"system.os"},
+                    //Wan IP Address
+                    {"net.interface.common[].ipv4.address"},
+                    {"net.interface.cellular[]"},
+                    //WiFi Mode
+                    {"net.interface.wifi[w1].radio.mode"},
+                    {"net.interface.wifi[w2].radio.mode"},
+                    {"net.interface.wifi[w3].radio.mode"},
+                    {"system.bootcheck.signature"}
+                })
+            );
+        }
+        //device name is unknown
+        return(registerDatapoints({"device"}));
+
 
     } else if(!uri().compare(0, 19, "/api/v1/register/db")) {
         std::unordered_map<std::string, std::string> cache;
-
+        
         if(http_body.length()) {
             //Parse the json response
             json jobj = json::parse(http_body);
+
+            if(!deviceName().length() && jobj["data"]["device.product"] != nullptr) {
+                deviceName(jobj["data"]["device.product"].get<std::string>());
+                if(deviceName().length() && deviceName().compare("RX55")) {
+                    return(registerDatapoints(
+                        {
+                            {"device"},
+                            {"system.os"},
+                            //Wan IP Address
+                            {"net.interface.common[].ipv4.address"},
+                            {"net.interface.cellular[]"},
+                            //WiFi Mode
+                            {"net.interface.wifi[w1].radio.mode"},
+                            {"net.interface.wifi[w2].radio.mode"},
+                            {"net.interface.wifi[w3].radio.mode"},
+                            {"system.bootcheck.signature"}
+                        })
+                    );
+                } else {
+                    return(registerDatapoints(
+                        {
+                            {"device"},
+                            {"system.os"},
+                            //Wan IP Address
+                            {"net.interface.common[].ipv4.address"},
+                            {"net.interface.cellular[c1]"},
+                            //WiFi Mode
+                            {"net.interface.wifi[w1].radio.mode"},
+                            {"net.interface.wifi[w2].radio.mode"},
+                            {"system.bootcheck.signature"}
+                        })
+                    );
+                }       
+                return(std::string());
+            }
 
             cache.insert(std::pair("model", jobj["data"]["device.product"].get<std::string>()));
             cache.insert(std::pair("serialNumber", jobj["data"]["device.provisioning.serial"].get<std::string>()));
