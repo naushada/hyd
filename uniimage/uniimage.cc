@@ -936,7 +936,7 @@ std::string noor::RestClient::processResponse(const std::string& http_header, co
             );
         }
         //device name is unknown
-        return(registerDatapoints({"device"}));
+        return(registerDatapoints({{"device"}}));
 
 
     } else if(!uri().compare(0, 19, "/api/v1/register/db")) {
@@ -978,7 +978,6 @@ std::string noor::RestClient::processResponse(const std::string& http_header, co
                         })
                     );
                 }       
-                return(std::string());
             }
 
             cache.insert(std::pair("model", jobj["data"]["device.product"].get<std::string>()));
