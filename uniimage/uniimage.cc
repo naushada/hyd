@@ -178,11 +178,11 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                             }
                             std::cout << "line: " << __LINE__ << " client is connected successfully for serviceType: " << serviceType << " channel: " << Fd << std::endl;
                             //There's no error on the socket
-                            struct epoll_event evt;
-                            evt.events = EPOLLIN | EPOLLRDHUP;
-                            evt.data.u64 = std::uint64_t(Fd) << 32 | std::uint64_t(serviceType);
+                            //struct epoll_event evt;
+                            ent.events = EPOLLIN | EPOLLRDHUP;
+                            //evt.data.u64 = std::uint64_t(Fd) << 32 | std::uint64_t(serviceType);
                             
-                            auto ret = ::epoll_ctl(m_epollFd, EPOLL_CTL_MOD, Fd, &evt);
+                            auto ret = ::epoll_ctl(m_epollFd, EPOLL_CTL_MOD, Fd, &ent);
                             (void)ret;
                             auto& svc = GetService(serviceType);
                             svc->connected_client(noor::client_connection::Connected);
@@ -224,11 +224,11 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                             }
                             std::cout << "line: " << __LINE__ << " Tls Tcp client is connected successfully " << std::endl;
                             //There's no error on the socket
-                            struct epoll_event evt;
-                            evt.events = EPOLLIN |EPOLLRDHUP;
-                            evt.data.u64 = std::uint64_t(Fd) << 32 | std::uint64_t(serviceType);
+                            //struct epoll_event evt;
+                            ent.events = EPOLLIN |EPOLLRDHUP;
+                            //evt.data.u64 = std::uint64_t(Fd) << 32 | std::uint64_t(serviceType);
                             
-                            auto ret = ::epoll_ctl(m_epollFd, EPOLL_CTL_MOD, Fd, &evt);
+                            auto ret = ::epoll_ctl(m_epollFd, EPOLL_CTL_MOD, Fd, &ent);
                             (void)ret;
                             auto& svc = GetService(serviceType);
                             svc->connected_client(noor::client_connection::Connected);
@@ -271,11 +271,11 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                             }
 
                             //There's no error on the socket
-                            struct epoll_event evt;
-                            evt.events = EPOLLIN | EPOLLRDHUP;
-                            evt.data.u64 = std::uint64_t(Fd) << 32 | std::uint64_t(serviceType);
+                            //struct epoll_event evt;
+                            ent.events = EPOLLIN | EPOLLRDHUP;
+                            //evt.data.u64 = std::uint64_t(Fd) << 32 | std::uint64_t(serviceType);
                             
-                            auto ret = ::epoll_ctl(m_epollFd, EPOLL_CTL_MOD, Fd, &evt);
+                            auto ret = ::epoll_ctl(m_epollFd, EPOLL_CTL_MOD, Fd, &ent);
                             (void)ret;
                         } while(0);
                     }
@@ -288,11 +288,11 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                         svc->tls().init(Fd);
                         svc->tls().client();
 
-                        struct epoll_event evt;
-                        evt.events = EPOLLIN |EPOLLRDHUP;
-                        evt.data.u64 = std::uint64_t(Fd) << 32 | std::uint64_t(serviceType);
+                        //struct epoll_event evt;
+                        ent.events = EPOLLIN |EPOLLRDHUP;
+                        //evt.data.u64 = std::uint64_t(Fd) << 32 | std::uint64_t(serviceType);
                         
-                        auto ret = ::epoll_ctl(m_epollFd, EPOLL_CTL_MOD, Fd, &evt);
+                        auto ret = ::epoll_ctl(m_epollFd, EPOLL_CTL_MOD, Fd, &ent);
                         (void)ret;
                         //Get Token for Rest Client
                         json jobj = json::object();
