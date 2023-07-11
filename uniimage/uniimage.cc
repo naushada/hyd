@@ -29,6 +29,7 @@ using json = nlohmann::json;
  */
 std::int32_t noor::Uniimage::init() {
     m_epollFd = ::epoll_create1(EPOLL_CLOEXEC);
+
     if(m_epollFd < 0) {
         // Creation of epoll instance is failed.
         if(EMFILE == errno) {
@@ -73,6 +74,7 @@ std::int32_t noor::Uniimage::CreateServiceAndRegisterToEPoll(noor::ServiceType s
             case noor::ServiceType::Tcp_Device_Server_Service:
             case noor::ServiceType::Tcp_Device_Console_Server_Service:
             case noor::ServiceType::Tcp_Web_Server_Service:
+            case noor::ServiceType::Tls_Tcp_Device_Server_Service:
             {
                 m_services.insert(std::make_pair(serviceType, std::make_unique<TcpServer>(IP, PORT)));
                 RegisterToEPoll(serviceType);
@@ -119,15 +121,18 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
     }
 
     std::vector<struct epoll_event> activeEvt(m_services.size());
+    std::int32_t nReady = -1;
 
     while(true) {
-        std::int32_t nReady = -1;
+        
         activeEvt.resize(m_evts.size());
         nReady = ::epoll_wait(m_epollFd, activeEvt.data(), activeEvt.size(), toInMilliSeconds);
+
         //Upon timeout nReady is ZERO and -1 Upon Failure.
         if(nReady > 0) {
             activeEvt.resize(nReady);
             std::cout << __TIMESTAMP__ << " line: " << __LINE__ << " nReady: " << nReady << " m_services.size(): " << m_services.size() << std::endl;
+
         } else if(nReady < 0) {
             //Error is returned by epoll_wait
             if(EBADF == errno) {
