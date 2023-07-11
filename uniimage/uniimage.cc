@@ -269,7 +269,7 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                                 auto ret = getpeername(Fd, (struct sockaddr *)&peer, &sock_len);
                                 if(ret < 0 && errno == ENOTCONN) {
                                     //re-attemp connection now.
-                                    std::cout << __TIMESTAMP__ << " line: " << __LINE__ << " Tls Tcp client is connected successfully " << std::endl;
+                                    std::cout << __TIMESTAMP__ << " line: " << __LINE__ << " Server is not UP yet, re-attempting... " << std::endl;
                                     auto& inst = GetService(serviceType);
                                     auto IP = inst->ip();
                                     auto PORT = inst->port();
