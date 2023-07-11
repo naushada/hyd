@@ -159,6 +159,7 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
             if(ent.events & EPOLLOUT) {
                 //Descriptor is ready for Write
                 std::cout << __TIMESTAMP__ << " line: " << __LINE__ << " EPOLLOUT is set for serviceType: " << serviceType << " channel: " << Fd << std::endl;
+                std::cout << __TIMESTAMP__ << " line: " << __LINE__ << " events: " << ent.events << std::endl;
                 switch(serviceType) {
                     case noor::ServiceType::Tcp_Device_Client_Service_Async:
                     {
@@ -321,6 +322,7 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                     break;
                 }
             } else if(ent.events & EPOLLIN) {
+                std::cout << __TIMESTAMP__ << " line: " << __LINE__ << " events: " << ent.events << std::endl;
                 //file descriptor is ready for read.
                 switch(serviceType) {
                     case noor::ServiceType::Tcp_Web_Server_Service:
@@ -674,6 +676,7 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                 }
                 
             } else if(ent.events & EPOLLRDHUP) {
+                std::cout << __TIMESTAMP__ << " line: " << __LINE__ << " events: " << ent.events << std::endl;
                 //Connection is closed by other end
                 switch(serviceType) {
                     case noor::ServiceType::Tcp_Device_Client_Connected_Service:
@@ -717,10 +720,13 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                     }
                 }
             } else if(ent.events & EPOLLERR) {
+                std::cout << __TIMESTAMP__ << " line: " << __LINE__ << " events: " << ent.events << std::endl;
                 std::cout << __TIMESTAMP__ << " line: " << __LINE__ << " epollerr events: " << ent.events  << " Fd:" << Fd << " serviceType: " << serviceType << std::endl;
             } else if(ent.events & EPOLLONESHOT) {
+                std::cout << __TIMESTAMP__ << " line: " << __LINE__ << " events: " << ent.events << std::endl;
                 std::cout << __TIMESTAMP__ << " line: " << __LINE__ << " oneshots events: " << ent.events << " Fd:" << Fd << " serviceType: " << serviceType << std::endl;
             } else {
+                std::cout << __TIMESTAMP__ << " line: " << __LINE__ << " events: " << ent.events << std::endl;
                 std::cout << __TIMESTAMP__ << " line: " << __LINE__ << " unhandled events: " << ent.events << " Fd:" << Fd << " serviceType: " << serviceType << std::endl;
             }
         }
