@@ -146,6 +146,9 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
             }
             std::cout << "line: " << __LINE__ << "nReady: " << nReady << std::endl;
             continue;
+        } else if(!nReady) {
+            //Timeout happens
+            continue;
         }
 
         for(auto it = activeEvt.begin(); it != activeEvt.end(); ++it) {
