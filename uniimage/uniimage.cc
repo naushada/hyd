@@ -1204,7 +1204,19 @@ int main(std::int32_t argc, char *argv[]) {
 
     if(!config["role"].compare("client")) {
         
-        inst.CreateServiceAndRegisterToEPoll(noor::ServiceType::Tcp_Device_Client_Service_Async, config["server-ip"], std::stoi(config["server-port"]), true);
+        if(!config["protocol"].compare("tcp")) {
+            inst.CreateServiceAndRegisterToEPoll(noor::ServiceType::Tcp_Device_Client_Service_Async, config["server-ip"], std::stoi(config["server-port"]), true);
+        } else if(!config["protocol"].compare("udp")) {
+
+        } else if(!config["protocol"].compare("tls")) {
+
+        } else if(!config["protocol"].compare("dtls")) {
+
+        } else {
+            //Protocol not supported.
+            std::cout << __TIMESTAMP__ << " line: " << __LINE__ << " protocol is not supported " << std::endl;
+            exit(0);
+        }
         inst.CreateServiceAndRegisterToEPoll(noor::ServiceType::Tcp_Device_Console_Client_Service_Async, config["server-ip"], consolePort, true);
         //inst.CreateServiceAndRegisterToEPoll(noor::ServiceType::Tcp_Web_Client_Proxy_Service, bridgeIP, httpPort, false);
         inst.CreateServiceAndRegisterToEPoll(noor::ServiceType::Tls_Tcp_Device_Rest_Client_Service_Sync, bridgeIP, httpsPort);
@@ -1214,9 +1226,20 @@ int main(std::int32_t argc, char *argv[]) {
         if(!config["server-ip"].length()) {
             config["server-ip"] = "127.0.0.1";
         }
+        if(!config["protocol"].compare("tcp")) {
+            inst.CreateServiceAndRegisterToEPoll(noor::ServiceType::Tcp_Device_Server_Service, config["server-ip"], std::stoi(config["server-port"]));
+        } else if(!config["protocol"].compare("udp")) {
 
-        inst.CreateServiceAndRegisterToEPoll(noor::ServiceType::Tcp_Device_Server_Service, config["server-ip"], std::stoi(config["server-port"]));
-        inst.CreateServiceAndRegisterToEPoll(noor::ServiceType::Tls_Tcp_Device_Server_Service, config["server-ip"], std::stoi(config["server-port"]));
+        } else if(!config["protocol"].compare("tls")) {
+            inst.CreateServiceAndRegisterToEPoll(noor::ServiceType::Tls_Tcp_Device_Server_Service, config["server-ip"], std::stoi(config["server-port"]));
+        } else if(!config["protocol"].compare("dtls")) {
+
+        } else {
+            //Protocol not supported.
+            std::cout << __TIMESTAMP__ << " line: " << __LINE__ << " protocol is not supported " << std::endl;
+            exit(0);
+        }
+
         inst.CreateServiceAndRegisterToEPoll(noor::ServiceType::Tcp_Device_Console_Server_Service, config["server-ip"], consolePort);
         inst.CreateServiceAndRegisterToEPoll(noor::ServiceType::Tcp_Web_Server_Service, config["server-ip"], std::stoi(config["web-port"]));
     }
