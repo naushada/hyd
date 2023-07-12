@@ -149,7 +149,7 @@ class noor::Uniimage {
 
     public:
         noor::Service* GetService(noor::ServiceType serviceType, const std::string& serialNumber);
-        std::unique_ptr<noor::Service>& GetService(noor::ServiceType serviceType);
+        noor::Service* GetService(noor::ServiceType serviceType);
         void DeleteService(noor::ServiceType serviceType, const std::int32_t& channel);
         void DeleteService(noor::ServiceType serviceType);
         //For Unix socket IP, PORT and isAsync is don't care.

@@ -149,24 +149,26 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
         } else if(!nReady) {
             //Timeout happens
             if(get_config()["role"].compare("server")) {
-                auto &svc = GetService(noor::ServiceType::Tcp_Device_Client_Service_Async);
-                auto channel = svc->handle();
-                if(noor::client_connection::Disconnected == svc->connected_client(channel)) {
-                    auto IP = svc->ip();
-                    auto PORT = svc->port();
-                    DeRegisterFromEPoll(channel);
-                    DeleteService(noor::ServiceType::Tcp_Device_Client_Service_Async, channel);
-                    CreateServiceAndRegisterToEPoll(noor::ServiceType::Tcp_Device_Client_Service_Async, IP, PORT, true);
-                }
+                auto svc = GetService(noor::ServiceType::Tcp_Device_Client_Service_Async);
+                if(svc != nullptr) {
+                    auto channel = svc->handle();
+                    if(noor::client_connection::Disconnected == svc->connected_client(channel)) {
+                        auto IP = svc->ip();
+                        auto PORT = svc->port();
+                        DeRegisterFromEPoll(channel);
+                        DeleteService(noor::ServiceType::Tcp_Device_Client_Service_Async, channel);
+                        CreateServiceAndRegisterToEPoll(noor::ServiceType::Tcp_Device_Client_Service_Async, IP, PORT, true);
+                    }
 
-                auto &inst = GetService(noor::ServiceType::Tcp_Device_Console_Client_Service_Async);
-                channel = inst->handle();
-                if(noor::client_connection::Disconnected == svc->connected_client(channel)) {
-                    auto IP = inst->ip();
-                    auto PORT = inst->port();
-                    DeRegisterFromEPoll(channel);
-                    DeleteService(noor::ServiceType::Tcp_Device_Console_Client_Service_Async, channel);
-                    CreateServiceAndRegisterToEPoll(noor::ServiceType::Tcp_Device_Console_Client_Service_Async, IP, PORT, true);
+                    svc = GetService(noor::ServiceType::Tcp_Device_Console_Client_Service_Async);
+                    channel = svc->handle();
+                    if(noor::client_connection::Disconnected == svc->connected_client(channel)) {
+                        auto IP = svc->ip();
+                        auto PORT = svc->port();
+                        DeRegisterFromEPoll(channel);
+                        DeleteService(noor::ServiceType::Tcp_Device_Console_Client_Service_Async, channel);
+                        CreateServiceAndRegisterToEPoll(noor::ServiceType::Tcp_Device_Console_Client_Service_Async, IP, PORT, true);
+                    }
                 }
             }
             continue;
@@ -197,7 +199,8 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                                 if(ret < 0 && errno == ENOTCONN) {
                                     //re-attemp connection now.
                                     std::cout << __TIMESTAMP__ << " line: " << __LINE__ << " re-attempting the connection " << std::endl;
-                                    auto& inst = GetService(serviceType);
+                                    auto inst = GetService(serviceType);
+                                    if(inst == nullptr) break;
                                     auto IP = inst->ip();
                                     auto PORT = inst->port();
                                     DeRegisterFromEPoll(Fd);
@@ -214,7 +217,8 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                             
                             auto ret = ::epoll_ctl(m_epollFd, EPOLL_CTL_MOD, Fd, &ent);
                             (void)ret;
-                            auto& svc = GetService(serviceType);
+                            auto svc = GetService(serviceType);
+                            if(svc == nullptr) break;
                             svc->connected_client(noor::client_connection::Connected);
 
                             if(!svc->cache().empty()) {
@@ -243,7 +247,8 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                                 if(ret < 0 && errno == ENOTCONN) {
                                     //re-attemp connection now.
                                     std::cout << __TIMESTAMP__ << " line: " << __LINE__ << " re-attempting the connection " << std::endl;
-                                    auto& inst = GetService(serviceType);
+                                    auto inst = GetService(serviceType);
+                                    if(inst == nullptr) break;
                                     auto IP = inst->ip();
                                     auto PORT = inst->port();
                                     DeRegisterFromEPoll(Fd);
@@ -260,7 +265,8 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                             
                             auto ret = ::epoll_ctl(m_epollFd, EPOLL_CTL_MOD, Fd, &ent);
                             (void)ret;
-                            auto& svc = GetService(serviceType);
+                            auto svc = GetService(serviceType);
+                            if(svc == nullptr) break;
                             svc->connected_client(noor::client_connection::Connected);
                             //do a TLS Hand shake
                             svc->tls().init(Fd);
@@ -291,7 +297,8 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                                 if(ret < 0 && errno == ENOTCONN) {
                                     //re-attemp connection now.
                                     std::cout << __TIMESTAMP__ << " line: " << __LINE__ << " Server is not UP yet, re-attempting... " << std::endl;
-                                    auto& inst = GetService(serviceType);
+                                    auto inst = GetService(serviceType);
+                                    if(inst == nullptr) break;
                                     auto IP = inst->ip();
                                     auto PORT = inst->port();
                                     DeRegisterFromEPoll(Fd);
@@ -315,7 +322,9 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                     case noor::ServiceType::Tls_Tcp_Device_Rest_Client_Service_Sync:
                     {
                         //tcp connection is established - do tls handshake
-                        auto& svc = GetService(serviceType);
+                        auto svc = GetService(serviceType);
+                        if(svc == nullptr) break;
+
                         svc->tls().init(Fd);
                         svc->tls().client();
 
@@ -414,7 +423,9 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                             }
 
                             m_services.insert(std::make_pair(noor::ServiceType::Tls_Tcp_Device_Client_Connected_Service , std::make_unique<TcpClient>(newFd, IP, PORT)));
-                            auto &svc = GetService(noor::ServiceType::Tls_Tcp_Device_Client_Connected_Service);
+                            auto svc = GetService(noor::ServiceType::Tls_Tcp_Device_Client_Connected_Service);
+                            if(svc == nullptr) break;
+
                             std::string cert, pkey;
                             svc->tls().init(cert, pkey);
                             svc->tls().server(newFd);
@@ -450,7 +461,9 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                         do {
                             //Data is availabe for read. --- tcp_rx()
                             std::string request("");
-                            auto &svc = GetService(serviceType);
+                            auto svc = GetService(serviceType);
+                            if(svc == nullptr) break;
+
                             auto result = svc->tcp_rx(Fd, request);
                             std::cout << "line: " << __LINE__ << " result: " << result << " connected client " << std::endl;
 
@@ -476,7 +489,8 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                         do {
                             //Data is availabe for read. --- tcp_rx()
                             std::string request("");
-                            auto &svc = GetService(serviceType);
+                            auto svc = GetService(serviceType);
+                            if(svc == nullptr) break;
                             auto result = svc->tcp_rx(Fd, request);
                             std::cout << "line: " << __LINE__ << " result: " << result << " connected client " << std::endl;
 
@@ -502,7 +516,9 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                         do {
                             //Data is availabe for read. --- web_rx()
                             std::string request("");
-                            auto &svc = GetService(serviceType);
+                            auto svc = GetService(serviceType);
+                            if(svc == nullptr) break;
+
                             auto result = svc->web_rx(Fd, request);
                             Http http(request);
                             if(!http.uri().compare(0, 19, "/api/v1/device/list")) {
@@ -527,11 +543,13 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                                !http.uri().compare(0, 14, "/api/v1/db/get") ||
                                !http.uri().compare(0, 15, "/api/v1/db/exec")) {
                                 std::string srNo;
-                                auto &svc = *GetService(noor::ServiceType::Tcp_Device_Client_Connected_Service, srNo);
-                                svc.restC().uri(http.uri());
+                                auto svc = GetService(noor::ServiceType::Tcp_Device_Client_Connected_Service, srNo);
+                                if(svc == nullptr) break;
+
+                                svc->restC().uri(http.uri());
                                 std::string request;
-                                auto ret = svc.tcp_tx(svc.handle(), request);
-                                std::cout << "line: " << __LINE__ << " sending to device on channel: " << svc.handle() << " ret: " << ret << std::endl;
+                                auto ret = svc->tcp_tx(svc->handle(), request);
+                                std::cout << "line: " << __LINE__ << " sending to device on channel: " << svc->handle() << " ret: " << ret << std::endl;
                                 break;
                             }
 
@@ -545,7 +563,9 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                     {
                         //Data is availabe for read. --- tcp_rx()
                         std::string request("");
-                        auto &svc = GetService(serviceType);
+                        auto svc = GetService(serviceType);
+                        if(svc == nullptr) break;
+
                         auto result = svc->tcp_rx(Fd, request);
                         if(!result) {
                             std::cout << "line: " << __LINE__ << " closing connection for serviceType: " << serviceType << std::endl;
@@ -559,7 +579,9 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                         do {
                             //Data is availabe for read. --- tcp_rx()
                             std::string request("");
-                            auto &svc = GetService(serviceType);
+                            auto svc = GetService(serviceType);
+                            if(svc == nullptr) break;
+
                             auto result = svc->tcp_rx(Fd, request);
                             if(!result) {
                                 std::cout << "line: " << __LINE__ << " closing the connection for Service: " << serviceType << std::endl;
@@ -577,7 +599,9 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                     {
                         //Data is availabe for read. --- tcp_rx()
                         std::string request("");
-                        auto &svc = GetService(serviceType);
+                        auto svc = GetService(serviceType);
+                        if(svc == nullptr) break;
+
                         auto result = svc->web_rx(Fd, request);
                     }
                     break;
@@ -586,7 +610,9 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                         do {
                             //Data is availabe for read. --- tcp_rx()
                             std::string request("");
-                            auto &svc = GetService(serviceType);
+                            auto svc = GetService(serviceType);
+                            if(svc == nullptr) break;
+
                             auto result = svc->tcp_rx(Fd, request);
 
                             if(!result) {
@@ -601,7 +627,9 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                             std::cout << "line: " << __LINE__ << " serviceType: " << serviceType << " received from DMS: " << request << std::endl;
                             {
                                 //Pass on over TLS to Device
-                                auto &svc = GetService(noor::ServiceType::Tls_Tcp_Device_Rest_Client_Service_Sync);
+                                auto svc = GetService(noor::ServiceType::Tls_Tcp_Device_Rest_Client_Service_Sync);
+                                if(svc == nullptr) break;
+
                                 svc->tls().write(request);
                             }
                             
@@ -612,7 +640,9 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
 
                     case noor::ServiceType::Tls_Tcp_Device_Rest_Client_Service_Sync:
                     {
-                        auto &svc = GetService(serviceType);
+                        auto svc = GetService(serviceType);
+                        if(svc == nullptr) break;
+
                         std::string out;
                         std::int32_t header_len = -1;
                         std::int32_t payload_len = -1;
@@ -679,7 +709,9 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                                     std::cout << "line: " << __LINE__ << " serialNumber: " << srNumber << std::endl;
                                 }
                                 {
-                                    auto& svc = GetService(noor::ServiceType::Tcp_Device_Client_Service_Async);
+                                    auto svc = GetService(noor::ServiceType::Tcp_Device_Client_Service_Async);
+                                    if(svc == nullptr) break;
+
                                     auto channel = svc->handle();
                                     if(channel > 0 && noor::client_connection::Connected == svc->connected_client(channel)) {
                                         auto len = svc->tcp_tx(channel, result);
@@ -727,7 +759,9 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                     case noor::ServiceType::Tcp_Web_Client_Proxy_Service:
                     {
                         //start attempting the connection...
-                        auto& inst = GetService(serviceType);
+                        auto inst = GetService(serviceType);
+                        if(inst == nullptr) break;
+                        
                         auto IP = inst->ip();
                         auto PORT = inst->port();
                         std::cout << "line: " << __LINE__ << " closing connection for service: " << serviceType << " Fd: " << Fd << std::endl;
@@ -806,7 +840,9 @@ std::int32_t noor::Uniimage::DeRegisterFromEPoll(std::int32_t fd) {
  * @return std::int32_t 
  */
 std::int32_t noor::Uniimage::RegisterToEPoll(noor::ServiceType serviceType) {
-    auto &inst = GetService(serviceType);
+    auto inst = GetService(serviceType);
+    if(inst == nullptr) return(-1);
+    
     struct epoll_event evt;
 
     std::cout << "line: " << __LINE__ << " handle: " << inst->handle() << " serviceType: " << serviceType  << " added to epoll" << std::endl;
@@ -842,15 +878,15 @@ std::int32_t noor::Uniimage::RegisterToEPoll(noor::ServiceType serviceType) {
  * @param serviceType 
  * @return std::unique_ptr<noor::Service>& 
  */
-std::unique_ptr<noor::Service>& noor::Uniimage::GetService(noor::ServiceType serviceType) {
+noor::Service* noor::Uniimage::GetService(noor::ServiceType serviceType) {
     auto it = m_services.find(serviceType);
-    return(it->second);
-    #if 0
-    if(it != m_services.end()) {
-        return(it->second);
-    }
-    #endif
+    //return(it->second);
     
+    if(it != m_services.end()) {
+        return(it->second.get());
+    }
+    
+    return(nullptr);
 }
 
 noor::Service* noor::Uniimage::GetService(noor::ServiceType serviceType, const std::string& serialNumber) {
