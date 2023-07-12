@@ -1379,6 +1379,9 @@ std::int32_t noor::Service::tcp_client(const std::string& IP, std::uint16_t PORT
     handle(channel);
     connected_client(noor::client_connection::Disconnected);
     
+    //let the caller see this file descriptor.
+    fd = channel;
+    
     /* set the reuse address flag so we don't get errors when restarting */
     auto flag = 1;
     if(::setsockopt(channel, SOL_SOCKET, SO_REUSEADDR, (std::int8_t *)&flag, sizeof(flag)) < 0 ) {
@@ -1416,8 +1419,6 @@ std::int32_t noor::Service::tcp_client(const std::string& IP, std::uint16_t PORT
         std::cout << "line: " << __LINE__ << " client is connected IP: " << IP << " PORT: " << PORT << std::endl;
     }
 
-    //let the caller see this file descriptor.
-    fd = channel;
     return(0);
 }
 
