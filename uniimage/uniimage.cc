@@ -148,24 +148,26 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
             continue;
         } else if(!nReady) {
             //Timeout happens
-            auto &svc = GetService(noor::ServiceType::Tcp_Device_Client_Service_Async);
-            auto channel = svc->handle();
-            if(noor::client_connection::Disconnected == svc->connected_client(channel)) {
-                auto IP = svc->ip();
-                auto PORT = svc->port();
-                DeRegisterFromEPoll(channel);
-                DeleteService(noor::ServiceType::Tcp_Device_Client_Service_Async, channel);
-                CreateServiceAndRegisterToEPoll(noor::ServiceType::Tcp_Device_Client_Service_Async, IP, PORT, true);
-            }
+            if(get_config()["role"].compare("server")) {
+                auto &svc = GetService(noor::ServiceType::Tcp_Device_Client_Service_Async);
+                auto channel = svc->handle();
+                if(noor::client_connection::Disconnected == svc->connected_client(channel)) {
+                    auto IP = svc->ip();
+                    auto PORT = svc->port();
+                    DeRegisterFromEPoll(channel);
+                    DeleteService(noor::ServiceType::Tcp_Device_Client_Service_Async, channel);
+                    CreateServiceAndRegisterToEPoll(noor::ServiceType::Tcp_Device_Client_Service_Async, IP, PORT, true);
+                }
 
-            auto &inst = GetService(noor::ServiceType::Tcp_Device_Console_Client_Service_Async);
-            channel = inst->handle();
-            if(noor::client_connection::Disconnected == svc->connected_client(channel)) {
-                auto IP = inst->ip();
-                auto PORT = inst->port();
-                DeRegisterFromEPoll(channel);
-                DeleteService(noor::ServiceType::Tcp_Device_Console_Client_Service_Async, channel);
-                CreateServiceAndRegisterToEPoll(noor::ServiceType::Tcp_Device_Console_Client_Service_Async, IP, PORT, true);
+                auto &inst = GetService(noor::ServiceType::Tcp_Device_Console_Client_Service_Async);
+                channel = inst->handle();
+                if(noor::client_connection::Disconnected == svc->connected_client(channel)) {
+                    auto IP = inst->ip();
+                    auto PORT = inst->port();
+                    DeRegisterFromEPoll(channel);
+                    DeleteService(noor::ServiceType::Tcp_Device_Console_Client_Service_Async, channel);
+                    CreateServiceAndRegisterToEPoll(noor::ServiceType::Tcp_Device_Console_Client_Service_Async, IP, PORT, true);
+                }
             }
             continue;
         }
@@ -1228,6 +1230,8 @@ int main(std::int32_t argc, char *argv[]) {
     std::uint16_t consolePort = 65344;
 
     auto ret = inst.init();
+    inst.set_config(config);
+
     std::cout << "line: " << __LINE__ << " epoll_fd: " << ret << std::endl;
 
     if(!config["role"].compare("client")) {

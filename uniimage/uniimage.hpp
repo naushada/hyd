@@ -170,7 +170,11 @@ class noor::Uniimage {
             m_services.clear();
             m_cache.clear();
             m_evts.clear();
+            m_config.clear();
         }
+
+        std::unordered_map<std::string, std::string> get_config() const {return(m_config);}
+        void set_config(std::unordered_map<std::string, std::string> cfg) {m_config = cfg;}
 
     private:
         std::int32_t m_epollFd;
@@ -178,6 +182,7 @@ class noor::Uniimage {
         std::multimap<noor::ServiceType, std::unique_ptr<noor::Service>> m_services;
         //The key is serial number of device. and value is json object.
         std::unordered_map<std::string, std::string> m_cache;
+        std::unordered_map<std::string, std::string> m_config;
 };
 
 /**
@@ -426,7 +431,7 @@ class noor::Service {
             if(config.empty()) {
                 std::cout << "line: " << __LINE__ << " config is empty" << std::endl;
             }
-            m_config = config;
+            
             m_is_register_variable = false; 
             m_handle = -1; 
             m_message_id = 0; 
@@ -434,7 +439,6 @@ class noor::Service {
         }
 
         virtual ~Service() {}
-        void close();
         std::int32_t tcp_client(const std::string& IP, std::uint16_t PORT, bool isAsync=false);
         std::int32_t udp_client(const std::string& IP, std::uint16_t PORT);
         std::int32_t uds_client(const std::string& PATH="/var/run/treemgr/treemgr.sock");
@@ -535,14 +539,6 @@ class noor::Service {
             return(m_un_server);
         }
         
-        std::unordered_map<std::string, std::string> get_config() const {
-            return(m_config);
-        }
-
-        void set_config(std::unordered_map<std::string, std::string> cfg) {
-            m_config = cfg;
-        }
-
         bool is_register_variable() const {
             return(m_is_register_variable);
         }
@@ -589,7 +585,7 @@ class noor::Service {
         struct sockaddr_un m_un_server;
         std::unordered_map<std::int32_t, client_connection> m_connected_clients;
 
-        std::unordered_map<std::string, std::string> m_config;
+        
         std::vector<struct epoll_event> m_epoll_evts;
         noor::Tls m_tls;
         noor::RestClient m_restC;
@@ -599,10 +595,10 @@ class noor::Service {
 
 class TcpClient: public noor::Service {
     public:
-        TcpClient(auto cfg, auto svcType): Service(cfg) {
+        TcpClient(auto config, auto svcType): Service() {
             std::string BRIP("192.168.1.1");
             if(svcType == noor::ServiceType::Tcp_Device_Console_Client_Service_Async) {
-                tcp_client(get_config().at("server-ip"), 65344, true);
+                tcp_client(config.at("server-ip"), 65344, true);
                 std::cout << "line: " << __LINE__ << "handle: " << handle() << " console app client connection is-progress: " << connected_client(handle()) << std::endl;
 
             } if(svcType == noor::ServiceType::Tcp_Web_Client_Proxy_Service) {
@@ -620,7 +616,7 @@ class TcpClient: public noor::Service {
                 std::cout << "line: " << __LINE__ << " handle: " << handle() << " TLS Client Sync: " << connected_client(handle()) << std::endl;
 
             }  else {
-                tcp_client(get_config().at("server-ip"), std::stoi(get_config().at("server-port")), true);
+                tcp_client(config.at("server-ip"), std::stoi(config.at("server-port")), true);
                 std::cout << "line: " << __LINE__ << " handle: " << handle() << " async client connection is-progress: " << connected_client(handle()) << std::endl;
             }
         }
@@ -658,8 +654,8 @@ class UnixClient: public noor::Service {
 
 class UdpClient: public noor::Service {
     public:
-        UdpClient(auto config): Service(config) {
-            udp_client(get_config().at("server-ip"), std::stoi(get_config().at("server-port")));
+        UdpClient(auto config): Service() {
+            udp_client(config.at("server-ip"), std::stoi(config.at("server-port")));
         }
         ~UdpClient() {
 
@@ -671,19 +667,19 @@ class UdpClient: public noor::Service {
 
 class TcpServer: public noor::Service {
     public:
-        TcpServer(auto config, auto svcType) : Service(config) {
+        TcpServer(auto config, auto svcType) : Service() {
 
             std::string sIP("127.0.0.1");
-            auto it = std::find_if(get_config().begin(), get_config().end(), [] (const auto& ent) {return(!ent.first.compare("server-ip"));});
+            auto it = std::find_if(config.begin(), config.end(), [] (const auto& ent) {return(!ent.first.compare("server-ip"));});
 
-            if(it != get_config().end()) {
+            if(it != config().end()) {
                 sIP.assign(it->second);
             }
 
             if(noor::ServiceType::Tcp_Device_Console_Server_Service == svcType) {
                 tcp_server(sIP, 65344);    
             } else {
-                tcp_server(sIP, std::stoi(get_config().at("server-port")));
+                tcp_server(sIP, std::stoi(config.at("server-port")));
             }
         }
         TcpServer(const std::string& IP, const std::uint16_t& PORT) {
@@ -697,8 +693,8 @@ class TcpServer: public noor::Service {
 
 class UdpServer: public noor::Service {
     public:
-        UdpServer(auto config) : Service(config) {
-            udp_server(get_config().at("server-ip"), std::stoi(get_config().at("server-port")));
+        UdpServer(std::string IP, std::int32_t PORT) : Service() {
+            udp_server(IP, PORT);
         }
         ~UdpServer() {}
         virtual std::string onReceive(std::string in) override;
@@ -708,16 +704,16 @@ class UdpServer: public noor::Service {
 
 class WebServer: public noor::Service {
     public:
-        WebServer(auto config, noor::ServiceType svcType) : Service(config) {
+        WebServer(auto config, noor::ServiceType svcType) : Service() {
 
             std::string sIP("127.0.0.1");
-            auto it = std::find_if(get_config().begin(), get_config().end(), [] (const auto& ent) {return(!ent.first.compare("server-ip"));});
+            auto it = std::find_if(config.begin(), config.end(), [] (const auto& ent) {return(!ent.first.compare("server-ip"));});
 
-            if(it != get_config().end()) {
+            if(it != config.end()) {
                 sIP.assign(it->second);
             }
             if(svcType == noor::ServiceType::Tcp_Web_Server_Service) {
-                web_server(sIP, std::stoi(get_config().at("web-port")));
+                web_server(sIP, std::stoi(config.at("web-port")));
             }
         }
         ~WebServer() {}
