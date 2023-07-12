@@ -220,15 +220,16 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                             svc->connected_client(noor::client_connection::Connected);
                             auto ret = ::epoll_ctl(m_epollFd, EPOLL_CTL_MOD, Fd, &ent);
                             (void)ret;
-                            svc = GetService(noor::ServiceType::Tls_Tcp_Device_Client_Service_Async);
-                            if(svc == nullptr) break;
+                            //svc = GetService(noor::ServiceType::Tls_Tcp_Device_Client_Service_Async);
+                            //if(svc == nullptr) break;
                             
-                            if(!svc->cache().empty()) {
-                                auto len = svc->tcp_tx(Fd, svc->cache().begin()->second);
+                            if(!getResponseCache().empty()) {
+                                auto len = svc->tcp_tx(Fd, getResponseCache().begin()->second);
                                 if(len > 0) {
                                     std::cout << "line: " << __LINE__ << " sent to Server over TCP len: " << len << std::endl;
-                                    std::cout << "line: " << __LINE__ << " sent to Server over TCP : " << svc->cache().begin()->second << std::endl;
+                                    std::cout << "line: " << __LINE__ << " sent to Server over TCP : " << getResponseCache().begin()->second << std::endl;
                                 }
+                                break;
                             }
                         } while(0);
                     }
@@ -310,6 +311,7 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                                 }
                             }
 
+                            std::cout << __TIMESTAMP__ << " line: " << __LINE__ << " client is connected successfully for serviceType: " << serviceType << " channel: " << Fd << std::endl;
                             //There's no error on the socket
                             //struct epoll_event evt;
                             ent.events = EPOLLIN | EPOLLRDHUP;
@@ -707,7 +709,7 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                                 if(jobj["serialNumber"] != nullptr) {
                                     auto srNumber = jobj["serialNumber"].get<std::string>();
                                     //The key is the serial number
-                                    svc->cache().insert(std::pair(srNumber, result));
+                                    getResponseCache().insert(std::pair(srNumber, result));
                                     std::cout << "line: " << __LINE__ << " serialNumber: " << srNumber << std::endl;
                                 }
                                 {
