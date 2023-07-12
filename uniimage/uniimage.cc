@@ -66,8 +66,9 @@ std::int32_t noor::Uniimage::CreateServiceAndRegisterToEPoll(noor::ServiceType s
             case noor::ServiceType::Tcp_Web_Client_Proxy_Service:
             case noor::ServiceType::Tls_Tcp_Device_Rest_Client_Service_Sync:
             {
-                m_services.insert(std::make_pair(serviceType, std::make_unique<TcpClient>(IP, PORT, isAsync)));
-                RegisterToEPoll(serviceType);
+                std::int32_t channel;
+                m_services.insert(std::make_pair(serviceType, std::make_unique<TcpClient>(IP, PORT, channel, isAsync)));
+                RegisterToEPoll(serviceType, channel);
             }
             break;
 
@@ -76,8 +77,9 @@ std::int32_t noor::Uniimage::CreateServiceAndRegisterToEPoll(noor::ServiceType s
             case noor::ServiceType::Tcp_Web_Server_Service:
             case noor::ServiceType::Tls_Tcp_Device_Server_Service:
             {
-                m_services.insert(std::make_pair(serviceType, std::make_unique<TcpServer>(IP, PORT)));
-                RegisterToEPoll(serviceType);
+                std::int32_t channel;
+                m_services.insert(std::make_pair(serviceType, std::make_unique<TcpServer>(IP, PORT, channel)));
+                RegisterToEPoll(serviceType, channel);
             }
             break;
             
@@ -371,7 +373,7 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
 
                             std::cout<< "line: " << __LINE__ << " new client from WEB IP: " << IP <<" PORT: " << PORT << " FD: " << newFd << std::endl;
                             m_services.insert(std::make_pair(noor::ServiceType::Tcp_Web_Client_Connected_Service , std::make_unique<TcpClient>(newFd, IP, PORT)));
-                            RegisterToEPoll(noor::ServiceType::Tcp_Web_Client_Connected_Service);
+                            RegisterToEPoll(noor::ServiceType::Tcp_Web_Client_Connected_Service, newFd);
                         }
                     }
                     break;
@@ -395,7 +397,7 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                             }
 
                             m_services.insert(std::make_pair(noor::ServiceType::Tcp_Device_Client_Connected_Service , std::make_unique<TcpClient>(newFd, IP, PORT)));
-                            RegisterToEPoll(noor::ServiceType::Tcp_Device_Client_Connected_Service);
+                            RegisterToEPoll(noor::ServiceType::Tcp_Device_Client_Connected_Service, newFd);
                         }
                     }
                     break;
@@ -420,14 +422,14 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                             }
 
                             m_services.insert(std::make_pair(noor::ServiceType::Tls_Tcp_Device_Client_Connected_Service , std::make_unique<TcpClient>(newFd, IP, PORT)));
-                            auto svc = GetService(noor::ServiceType::Tls_Tcp_Device_Client_Connected_Service);
+                            auto svc = GetService(noor::ServiceType::Tls_Tcp_Device_Client_Connected_Service, newFd);
                             if(svc == nullptr) break;
 
                             std::string cert, pkey;
                             svc->tls().init(cert, pkey);
                             svc->tls().server(newFd);
 
-                            RegisterToEPoll(noor::ServiceType::Tls_Tcp_Device_Client_Connected_Service);
+                            RegisterToEPoll(noor::ServiceType::Tls_Tcp_Device_Client_Connected_Service, newFd);
                         }
                     }
                     break;
@@ -449,7 +451,7 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                             }
 
                             m_services.insert(std::make_pair(noor::ServiceType::Tcp_Device_Console_Connected_Service, std::make_unique<TcpClient>(newFd, IP, PORT)));
-                            RegisterToEPoll(noor::ServiceType::Tcp_Device_Console_Connected_Service);
+                            RegisterToEPoll(noor::ServiceType::Tcp_Device_Console_Connected_Service, newFd);
                         }
                     }
                     break;
@@ -458,7 +460,7 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                         do {
                             //Data is availabe for read. --- tcp_rx()
                             std::string request("");
-                            auto svc = GetService(serviceType);
+                            auto svc = GetService(serviceType, Fd);
                             if(svc == nullptr) break;
 
                             auto result = svc->tcp_rx(Fd, request);
@@ -486,7 +488,7 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                         do {
                             //Data is availabe for read. --- tcp_rx()
                             std::string request("");
-                            auto svc = GetService(serviceType);
+                            auto svc = GetService(serviceType, Fd);
                             if(svc == nullptr) break;
                             auto result = svc->tcp_rx(Fd, request);
                             std::cout << "line: " << __LINE__ << " result: " << result << " connected client " << std::endl;
@@ -513,7 +515,7 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                         do {
                             //Data is availabe for read. --- web_rx()
                             std::string request("");
-                            auto svc = GetService(serviceType);
+                            auto svc = GetService(serviceType, Fd);
                             if(svc == nullptr) break;
 
                             auto result = svc->web_rx(Fd, request);
@@ -560,7 +562,7 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                     {
                         //Data is availabe for read. --- tcp_rx()
                         std::string request("");
-                        auto svc = GetService(serviceType);
+                        auto svc = GetService(serviceType, Fd);
                         if(svc == nullptr) break;
 
                         auto result = svc->tcp_rx(Fd, request);
@@ -754,7 +756,7 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                     case noor::ServiceType::Tcp_Web_Client_Proxy_Service:
                     {
                         //start attempting the connection...
-                        auto inst = GetService(serviceType);
+                        auto inst = GetService(serviceType, Fd);
                         if(inst == nullptr) break;
                         
                         auto IP = inst->ip();
@@ -834,14 +836,12 @@ std::int32_t noor::Uniimage::DeRegisterFromEPoll(std::int32_t fd) {
  * @param serviceType 
  * @return std::int32_t 
  */
-std::int32_t noor::Uniimage::RegisterToEPoll(noor::ServiceType serviceType) {
-    auto inst = GetService(serviceType);
-    if(inst == nullptr) return(-1);
-
+std::int32_t noor::Uniimage::RegisterToEPoll(noor::ServiceType serviceType, std::int32_t channel) {
+    
     struct epoll_event evt;
 
-    std::cout << "line: " << __LINE__ << " handle: " << inst->handle() << " serviceType: " << serviceType  << " added to epoll" << std::endl;
-    std::uint64_t dd = std::uint64_t(inst->handle());
+    std::cout << "line: " << __LINE__ << " handle: " << channel << " serviceType: " << serviceType  << " added to epoll" << std::endl;
+    std::uint64_t dd = std::uint64_t(channel);
     evt.data.u64 = std::uint64_t(dd) << 32 | std::uint64_t(serviceType);
 
     if((serviceType == noor::ServiceType::Tcp_Device_Client_Service_Async) ||
@@ -857,7 +857,7 @@ std::int32_t noor::Uniimage::RegisterToEPoll(noor::ServiceType serviceType) {
         std::cout << "line: " << __LINE__ << " value of events: " << evt.events << " serviceType: " << serviceType << std::endl;
     }
 
-    if(::epoll_ctl(m_epollFd, EPOLL_CTL_ADD, inst->handle(), &evt) == -1)
+    if(::epoll_ctl(m_epollFd, EPOLL_CTL_ADD, channel, &evt) == -1)
     {
         std::cout << "line: " << __LINE__ << " Failed to add Fd to epoll instance for serviceType: " << serviceType << " Terminating the process"<< std::endl;
         exit(2);
@@ -888,6 +888,16 @@ noor::Service* noor::Uniimage::GetService(noor::ServiceType serviceType, const s
     auto it = m_services.equal_range(serviceType);
     for(auto &ent = it.first; ent != it.second; ++ent) {
         if(serialNumber.length() && !serialNumber.compare(ent->second->serialNo())) {
+            return(ent->second.get());
+        }
+    }
+    return(nullptr);
+}
+
+noor::Service* noor::Uniimage::GetService(noor::ServiceType serviceType, const std::int32_t& channel) {
+    auto it = m_services.equal_range(serviceType);
+    for(auto &ent = it.first; ent != it.second; ++ent) {
+        if(channel > 0 && channel == ent->second->handle()) {
             return(ent->second.get());
         }
     }
@@ -1337,7 +1347,7 @@ int main(std::int32_t argc, char *argv[]) {
  * @param isAsync 
  * @return std::int32_t 
  */
-std::int32_t noor::Service::tcp_client(const std::string& IP, std::uint16_t PORT, bool isAsync) {
+std::int32_t noor::Service::tcp_client(const std::string& IP, std::uint16_t PORT, std::int32_t &fd, bool isAsync) {
     /* Set up the address we're going to bind to. */
     bzero(&m_inet_server, sizeof(m_inet_server));
     m_inet_server.sin_family = AF_INET;
@@ -1366,7 +1376,7 @@ std::int32_t noor::Service::tcp_client(const std::string& IP, std::uint16_t PORT
 
     handle(channel);
     connected_client(noor::client_connection::Disconnected);
-
+    
     /* set the reuse address flag so we don't get errors when restarting */
     auto flag = 1;
     if(::setsockopt(channel, SOL_SOCKET, SO_REUSEADDR, (std::int8_t *)&flag, sizeof(flag)) < 0 ) {
@@ -1404,6 +1414,8 @@ std::int32_t noor::Service::tcp_client(const std::string& IP, std::uint16_t PORT
         std::cout << "line: " << __LINE__ << " client is connected IP: " << IP << " PORT: " << PORT << std::endl;
     }
 
+    //let the caller see this file descriptor.
+    fd = channel;
     return(0);
 }
 
@@ -2144,7 +2156,7 @@ std::int32_t noor::Service::udp_rx(std::string& data) {
  * @param PORT 
  * @return std::int32_t 
  */
-std::int32_t noor::Service::tcp_server(const std::string& IP, std::uint16_t PORT) {
+std::int32_t noor::Service::tcp_server(const std::string& IP, std::uint16_t PORT, std::int32_t& fd) {
    /* Set up the address we're going to bind to. */
     bzero(&m_inet_server, sizeof(m_inet_server));
     m_inet_server.sin_family = AF_INET;
@@ -2186,6 +2198,8 @@ std::int32_t noor::Service::tcp_server(const std::string& IP, std::uint16_t PORT
 	    return(-1);
     }
 
+    //let the caller see this file descriptor.
+    fd = channel;
     return(0); 
 }
 

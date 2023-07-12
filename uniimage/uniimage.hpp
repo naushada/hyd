@@ -150,11 +150,12 @@ class noor::Uniimage {
     public:
         noor::Service* GetService(noor::ServiceType serviceType, const std::string& serialNumber);
         noor::Service* GetService(noor::ServiceType serviceType);
+        noor::Service* GetService(noor::ServiceType serviceType, const std::int32_t& channel);
         void DeleteService(noor::ServiceType serviceType, const std::int32_t& channel);
         void DeleteService(noor::ServiceType serviceType);
         //For Unix socket IP, PORT and isAsync is don't care.
         std::int32_t CreateServiceAndRegisterToEPoll(noor::ServiceType serviceType, const std::string& IP="127.0.0.1", const std::uint16_t& PORT=65344, bool isAsync=false);
-        std::int32_t RegisterToEPoll(noor::ServiceType serviceType);
+        std::int32_t RegisterToEPoll(noor::ServiceType serviceType, std::int32_t channel);
         std::int32_t DeRegisterFromEPoll(std::int32_t fd);
         std::int32_t start(std::int32_t to);
         std::int32_t stop(std::int32_t in);
@@ -439,10 +440,10 @@ class noor::Service {
         }
 
         virtual ~Service() {}
-        std::int32_t tcp_client(const std::string& IP, std::uint16_t PORT, bool isAsync=false);
+        std::int32_t tcp_client(const std::string& IP, std::uint16_t PORT, std::int32_t& channel, bool isAsync=false);
         std::int32_t udp_client(const std::string& IP, std::uint16_t PORT);
         std::int32_t uds_client(const std::string& PATH="/var/run/treemgr/treemgr.sock");
-        std::int32_t tcp_server(const std::string& IP, std::uint16_t PORT);
+        std::int32_t tcp_server(const std::string& IP, std::uint16_t PORT, std::int32_t& channel);
         std::int32_t udp_server(const std::string& IP, std::uint16_t PORT);
         std::int32_t web_server(const std::string& IP, std::uint16_t PORT);
         std::int32_t tcp_rx(std::string& data);
@@ -590,6 +591,7 @@ class noor::Service {
 
 class TcpClient: public noor::Service {
     public:
+        #if 0
         TcpClient(auto config, auto svcType): Service() {
             std::string BRIP("192.168.1.1");
             if(svcType == noor::ServiceType::Tcp_Device_Console_Client_Service_Async) {
@@ -615,9 +617,9 @@ class TcpClient: public noor::Service {
                 std::cout << "line: " << __LINE__ << " handle: " << handle() << " async client connection is-progress: " << connected_client(handle()) << std::endl;
             }
         }
-
-        TcpClient(const std::string& IP, const std::uint16_t& PORT, bool isAsync) {
-            tcp_client(IP, PORT, isAsync);
+        #endif
+        TcpClient(const std::string& IP, const std::uint16_t& PORT, std::int32_t& channel, bool isAsync) {
+            tcp_client(IP, PORT, channel, isAsync);
         }
 
         TcpClient(const std::int32_t& fd, const std::string& IP , const std::int32_t& PORT) {
@@ -662,6 +664,7 @@ class UdpClient: public noor::Service {
 
 class TcpServer: public noor::Service {
     public:
+    #if 0
         TcpServer(auto config, auto svcType) : Service() {
 
             std::string sIP("127.0.0.1");
@@ -677,8 +680,10 @@ class TcpServer: public noor::Service {
                 tcp_server(sIP, std::stoi(config.at("server-port")));
             }
         }
-        TcpServer(const std::string& IP, const std::uint16_t& PORT) {
-            tcp_server(IP, PORT);
+        #endif
+
+        TcpServer(const std::string& IP, const std::uint16_t& PORT, std::int32_t& channel) {
+            tcp_server(IP, PORT, channel);
         }
         ~TcpServer() {}
         virtual std::string onReceive(std::string in) override;
