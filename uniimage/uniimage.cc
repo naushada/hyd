@@ -521,6 +521,14 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                             if(svc == nullptr) break;
 
                             auto result = svc->web_rx(Fd, request);
+                            if(!result) {
+                                //connection is closed
+                                std::cout << "line: " << __LINE__ << " closing the client connection for serviceType: " << serviceType << std::endl;
+                                DeleteService(serviceType, Fd);
+                                DeRegisterFromEPoll(Fd);
+                                break;
+                            }
+                            
                             Http http(request);
                             if(!http.uri().compare(0, 19, "/api/v1/device/list")) {
                                 std::string body("");
