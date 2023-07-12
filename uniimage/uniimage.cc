@@ -213,15 +213,12 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                             //There's no error on the socket
                             //struct epoll_event evt;
                             ent.events = EPOLLIN | EPOLLRDHUP;
-                            //evt.data.u64 = std::uint64_t(Fd) << 32 | std::uint64_t(serviceType);
                             auto svc = GetService(serviceType);
                             if(svc == nullptr) break;
 
                             svc->connected_client(noor::client_connection::Connected);
                             auto ret = ::epoll_ctl(m_epollFd, EPOLL_CTL_MOD, Fd, &ent);
                             (void)ret;
-                            //svc = GetService(noor::ServiceType::Tls_Tcp_Device_Client_Service_Async);
-                            //if(svc == nullptr) break;
                             
                             if(!getResponseCache().empty()) {
                                 auto len = svc->tcp_tx(Fd, getResponseCache().begin()->second);
@@ -264,8 +261,6 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                             //There's no error on the socket
                             //struct epoll_event evt;
                             ent.events = EPOLLIN |EPOLLRDHUP;
-                            //evt.data.u64 = std::uint64_t(Fd) << 32 | std::uint64_t(serviceType);
-                            
                             auto ret = ::epoll_ctl(m_epollFd, EPOLL_CTL_MOD, Fd, &ent);
                             (void)ret;
                             auto svc = GetService(serviceType);
@@ -275,8 +270,8 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                             svc->tls().init(Fd);
                             svc->tls().client();
 
-                            if(!svc->cache().empty()) {
-                                auto len = svc->tls().write(svc->cache().begin()->second);
+                            if(!getResponseCache().empty()) {
+                                auto len = svc->tls().write(getResponseCache().begin()->second);
                                 if(len > 0) {
                                     std::cout << "line: " << __LINE__ << " sent to Server over TLS len: " << len << std::endl; 
                                 }
@@ -315,8 +310,6 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                             //There's no error on the socket
                             //struct epoll_event evt;
                             ent.events = EPOLLIN | EPOLLRDHUP;
-                            //evt.data.u64 = std::uint64_t(Fd) << 32 | std::uint64_t(serviceType);
-                            
                             auto ret = ::epoll_ctl(m_epollFd, EPOLL_CTL_MOD, Fd, &ent);
                             (void)ret;
                         } while(0);
@@ -688,8 +681,6 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                             if(payload_len < 0) {
                                 break;
                             }
-
-                            
 
                             std::string body;
                             body.clear();

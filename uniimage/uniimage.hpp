@@ -558,10 +558,6 @@ class noor::Service {
             return(m_restC);
         }
 
-        auto& cache() {
-            return(m_cache);
-        }
-
         std::string serialNo() const {
             return(m_serialNumber);
         }
@@ -589,7 +585,6 @@ class noor::Service {
         std::vector<struct epoll_event> m_epoll_evts;
         noor::Tls m_tls;
         noor::RestClient m_restC;
-        std::unordered_map<std::string, std::string> m_cache;
         std::string m_serialNumber;
 };
 
