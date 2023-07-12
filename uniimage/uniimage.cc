@@ -616,7 +616,7 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                         std::string out;
                         std::int32_t header_len = -1;
                         std::int32_t payload_len = -1;
-                        
+                        bool is_conn_closed = false;
                         do {
                             auto ret = svc->tls().peek(out);
                             if(ret > 0) {
@@ -629,10 +629,22 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                                     payload_len = std::stoi(ct);
                                     std::cout << "line: " << __LINE__ << " value of content-length: " << std::stoi(ct) << std::endl;
                                 }
+                            } else if(!ret) {
+                                //TLS connection is closed
+                                std::cout << __TIMESTAMP__ << " line: " << __LINE__ << " tls connection is closed" << std::endl;
+                                is_conn_closed = true;
+                                break;
                             }
                         }while(header_len != out.length());
 
                         do {
+                            if(is_conn_closed) {
+                                //Peer is closed now 
+                                DeleteService(serviceType);
+                                DeRegisterFromEPoll(Fd);
+                                break;
+                            }
+
                             //Read HTTP Header first.
                             auto ret = svc->tls().read(out, header_len);
                             if(ret < 0) {
@@ -642,6 +654,8 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                             if(payload_len < 0) {
                                 break;
                             }
+
+                            
 
                             std::string body;
                             body.clear();
