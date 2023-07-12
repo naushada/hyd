@@ -109,38 +109,33 @@ namespace noor {
         };
 
         enum ServiceType: std::uint32_t {
-            // Sync --- Usages Blocking Socket
-            Unix_Data_Store_Client_Service_Sync = 1,
+
+            Tcp_DeviceMgmtServer_Server_Console_Service = 10, //server will be running on DeviceMgmtServer
+            Tcp_DeviceMgmtServer_Client_Console_Service_Async, //client will be running on Gateway
+            Tcp_DeviceMgmtServer_Client_Console_Service_Sync, //client will be running on Gateway
+            Tcp_Device_MgmtServer_Client_Console_Connected_Service, //client is connected between DeviceMgmtServer and Gateway.
             
-            // Async --- Usages Non-Blocking Socket
-            Tcp_Device_Console_Server_Service = 20,
-            Tcp_Device_Console_Client_Service_Async,
-            Tcp_Device_Console_Client_Service_Sync,
-            Tcp_Device_Console_Connected_Service,
 
-            Tcp_Web_Server_Service = 40,
-            Tcp_Web_Client_Connected_Service,
-            Tcp_Web_Client_Proxy_Service,
-
-            Tcp_Device_Server_Service = 60,
-            Tcp_Device_Client_Connected_Service,
-            Tcp_Device_Client_Service_Async,
-            Tcp_Device_Client_Service_Sync,
-            Tls_Tcp_Device_Server_Service,
+            Tcp_DeviceMgmtServer_Web_Server_Service = 50, //Web Server will be running on DeviceMgmtServer.
+            Tcp_DeviceMgmtServer_Web_Client_Connected_Service, //WebClient connected to WebServer Running on DeviceMgmt Server.
             
-            Tls_Tcp_Device_Client_Connected_Service,
-            Tls_Tcp_Device_Client_Service_Async,
-            Tls_Tcp_Device_Client_Service_Sync,
+            Tcp_DeviceMgmtServer_Server_Gateway_Service = 60, //Tcp Server will be running on DeviceMgmtServer.
+            Tcp_DeviceMgmtServer_Client_Gateway_Service_Async, // Tcp Asyn client is running on Gateway.
+            Tcp_DeviceMgmtServer_Client_Gateway_Service_Sync, //Tcp Sync client is running on Gateway.
+            Tcp_DeviceMgmtServer_Client_Gateway_Connected_Service, //Tcp Client connected between DeviceMgmtServer and Gateway.
+            
+            Tls_Tcp_DeviceMgmtServer_Server_Gateway_Service = 80, //Tls over Tcp Server will be running on DeviceMgmtServer.
+            Tls_Tcp_DeviceMgmtServer_Client_Gateway_Service_Async, //Tls over Tcp Async client will be running on Gateway. 
+            Tls_Tcp_DeviceMgmtServer_Client_Gateway_Service_Sync, //Tls over Tcp sync client will be running on Gateway.
+            Tls_Tcp_DeviceMgmtServer_Client_Gateway_Connected_Service, //Tls over Tcp client connected between DeviceMgmtServer and Gateway.
 
-            Tcp_Device_Rest_Client_Service_Async = 80,
-            Tls_Tcp_Device_Rest_Client_Service_Async,
-            Tcp_Device_Rest_Client_Service_Sync,
-            Tls_Tcp_Device_Rest_Client_Service_Sync,
+            Tls_Udp_DeviceMgmtServer_Server_Gateway_Service = 100, //Tls over Udp Server will be running on DeviceMgmtServer.
+            Tls_Udp_DeviceMgmtServer_Client_Gateway_Service_Async, //Tls over Udp Async client will be running on Gateway. 
+            Tls_Udp_DeviceMgmtServer_Client_Gateway_Service_Sync, //Tls over Udp sync client will be running on Gateway.
+            Tls_Udp_DeviceMgmtServer_Client_Gateway_Connected_Service, //Tls over Udp client connected between DeviceMgmtServer and Gateway.
 
-            Udp_Device_Server_Service = 100,
-            Tls_Udp_Device_Client_Service_Sync,
-            Tls_Udp_Device_Server_Service
-
+            Tls_Tcp_Rest_Client_For_Gateway_Service_Async = 200, //Tls over Tcp Async Rest Client will be running on Gateway.
+            Tls_Tcp_Rest_Client_For_Gateway_Service_Sync, //Tls over Tcp sync Rest Client will be running on Gateway.
         };
 }
 
@@ -712,7 +707,7 @@ class WebServer: public noor::Service {
             if(it != config.end()) {
                 sIP.assign(it->second);
             }
-            if(svcType == noor::ServiceType::Tcp_Web_Server_Service) {
+            if(svcType == noor::ServiceType::Tcp_DeviceMgmtServer_Web_Server_Service) {
                 web_server(sIP, std::stoi(config.at("web-port")));
             }
         }

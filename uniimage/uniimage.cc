@@ -59,12 +59,12 @@ std::int32_t noor::Uniimage::CreateServiceAndRegisterToEPoll(noor::ServiceType s
     do {
         switch(serviceType) {
 
-            case noor::ServiceType::Tcp_Device_Client_Service_Sync:
-            case noor::ServiceType::Tcp_Device_Client_Service_Async:
-            case noor::ServiceType::Tcp_Device_Console_Client_Service_Async:
-            case noor::ServiceType::Tcp_Device_Console_Client_Service_Sync:
-            case noor::ServiceType::Tcp_Web_Client_Proxy_Service:
-            case noor::ServiceType::Tls_Tcp_Device_Rest_Client_Service_Sync:
+            case noor::ServiceType::Tcp_DeviceMgmtServer_Client_Gateway_Service_Sync:
+            case noor::ServiceType::Tcp_DeviceMgmtServer_Client_Gateway_Service_Async:
+            case noor::ServiceType::Tcp_DeviceMgmtServer_Client_Console_Service_Async:
+            case noor::ServiceType::Tcp_DeviceMgmtServer_Client_Console_Service_Sync:
+            case noor::ServiceType::Tls_Tcp_Rest_Client_For_Gateway_Service_Sync:
+            case noor::ServiceType::Tls_Tcp_Rest_Client_For_Gateway_Service_Async:
             {
                 std::int32_t channel = -1;
                 auto inst = std::make_unique<TcpClient>(IP, PORT, channel, isAsync);
@@ -73,10 +73,10 @@ std::int32_t noor::Uniimage::CreateServiceAndRegisterToEPoll(noor::ServiceType s
             }
             break;
 
-            case noor::ServiceType::Tcp_Device_Server_Service:
-            case noor::ServiceType::Tcp_Device_Console_Server_Service:
-            case noor::ServiceType::Tcp_Web_Server_Service:
-            case noor::ServiceType::Tls_Tcp_Device_Server_Service:
+            case noor::ServiceType::Tcp_DeviceMgmtServer_Server_Gateway_Service:
+            case noor::ServiceType::Tcp_DeviceMgmtServer_Server_Console_Service:
+            case noor::ServiceType::Tcp_DeviceMgmtServer_Web_Server_Service:
+            case noor::ServiceType::Tls_Tcp_DeviceMgmtServer_Server_Gateway_Service:
             {
                 std::int32_t channel = -1;
                 auto inst = std::make_unique<TcpServer>(IP, PORT, channel);
@@ -153,25 +153,25 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
         } else if(!nReady) {
             //Timeout happens
             if(get_config()["role"].compare("server")) {
-                auto svc = GetService(noor::ServiceType::Tcp_Device_Client_Service_Async);
+                auto svc = GetService(noor::ServiceType::Tcp_DeviceMgmtServer_Client_Gateway_Service_Async);
                 if(svc != nullptr) {
                     auto channel = svc->handle();
                     if(noor::client_connection::Disconnected == svc->connected_client(channel)) {
                         auto IP = svc->ip();
                         auto PORT = svc->port();
                         DeRegisterFromEPoll(channel);
-                        DeleteService(noor::ServiceType::Tcp_Device_Client_Service_Async, channel);
-                        CreateServiceAndRegisterToEPoll(noor::ServiceType::Tcp_Device_Client_Service_Async, IP, PORT, true);
+                        DeleteService(noor::ServiceType::Tcp_DeviceMgmtServer_Client_Gateway_Service_Async, channel);
+                        CreateServiceAndRegisterToEPoll(noor::ServiceType::Tcp_DeviceMgmtServer_Client_Gateway_Service_Async, IP, PORT, true);
                     }
 
-                    svc = GetService(noor::ServiceType::Tcp_Device_Console_Client_Service_Async);
+                    svc = GetService(noor::ServiceType::Tcp_DeviceMgmtServer_Client_Console_Service_Async);
                     channel = svc->handle();
                     if(noor::client_connection::Disconnected == svc->connected_client(channel)) {
                         auto IP = svc->ip();
                         auto PORT = svc->port();
                         DeRegisterFromEPoll(channel);
-                        DeleteService(noor::ServiceType::Tcp_Device_Console_Client_Service_Async, channel);
-                        CreateServiceAndRegisterToEPoll(noor::ServiceType::Tcp_Device_Console_Client_Service_Async, IP, PORT, true);
+                        DeleteService(noor::ServiceType::Tcp_DeviceMgmtServer_Client_Console_Service_Async, channel);
+                        CreateServiceAndRegisterToEPoll(noor::ServiceType::Tcp_DeviceMgmtServer_Client_Console_Service_Async, IP, PORT, true);
                     }
                 }
             }
@@ -188,7 +188,7 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                 std::cout << __TIMESTAMP__ << " line: " << __LINE__ << " EPOLLOUT is set for serviceType: " << serviceType << " channel: " << Fd << std::endl;
                 std::cout << __TIMESTAMP__ << " line: " << __LINE__ << " events: " << ent.events << " serviceType: " << serviceType << std::endl;
                 switch(serviceType) {
-                    case noor::ServiceType::Tcp_Device_Client_Service_Async:
+                    case noor::ServiceType::Tcp_DeviceMgmtServer_Client_Gateway_Service_Async:
                     {
                         do {
                             // check that there's no error for socket.
@@ -236,7 +236,7 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                     }
                     break;
 
-                    case noor::ServiceType::Tls_Tcp_Device_Client_Service_Async:
+                    case noor::ServiceType::Tls_Tcp_DeviceMgmtServer_Client_Gateway_Service_Async:
                     {
                         do {
                             // check that there's no error for socket.
@@ -284,7 +284,7 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                     }
                     break;
 
-                    case noor::ServiceType::Tcp_Device_Console_Client_Service_Async:
+                    case noor::ServiceType::Tcp_DeviceMgmtServer_Client_Console_Service_Async:
                     {
                         do {
                             // check that there's no error for socket.
@@ -319,8 +319,8 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                         } while(0);
                     }
                     break;
-                    case noor::ServiceType::Tls_Tcp_Device_Rest_Client_Service_Async:
-                    case noor::ServiceType::Tls_Tcp_Device_Rest_Client_Service_Sync:
+                    case noor::ServiceType::Tls_Tcp_Rest_Client_For_Gateway_Service_Async:
+                    case noor::ServiceType::Tls_Tcp_Rest_Client_For_Gateway_Service_Sync:
                     {
                         //tcp connection is established - do tls handshake
                         auto svc = GetService(serviceType);
@@ -356,7 +356,7 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                 std::cout << __TIMESTAMP__ << " line: " << __LINE__ << " events: " << ent.events << " serviceType: " << serviceType << std::endl;
                 //file descriptor is ready for read.
                 switch(serviceType) {
-                    case noor::ServiceType::Tcp_Web_Server_Service:
+                    case noor::ServiceType::Tcp_DeviceMgmtServer_Web_Server_Service:
                     {
                         //New Web Connection
                         std::int32_t newFd = -1;
@@ -374,12 +374,12 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                             }
 
                             std::cout<< "line: " << __LINE__ << " new client from WEB IP: " << IP <<" PORT: " << PORT << " FD: " << newFd << std::endl;
-                            m_services.insert(std::make_pair(noor::ServiceType::Tcp_Web_Client_Connected_Service , std::make_unique<TcpClient>(newFd, IP, PORT)));
-                            RegisterToEPoll(noor::ServiceType::Tcp_Web_Client_Connected_Service, newFd);
+                            m_services.insert(std::make_pair(noor::ServiceType::Tcp_DeviceMgmtServer_Web_Client_Connected_Service , std::make_unique<TcpClient>(newFd, IP, PORT)));
+                            RegisterToEPoll(noor::ServiceType::Tcp_DeviceMgmtServer_Web_Client_Connected_Service, newFd);
                         }
                     }
                     break;
-                    case noor::ServiceType::Tcp_Device_Server_Service:
+                    case noor::ServiceType::Tcp_DeviceMgmtServer_Server_Gateway_Service:
                     {
                         std::int32_t newFd = -1;
                         struct sockaddr_in addr;
@@ -398,12 +398,12 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                                 std::cout << __TIMESTAMP__ << ": line: " << __LINE__ << " making socker non-blocking for fd: " << newFd << " failed" << std::endl;
                             }
 
-                            m_services.insert(std::make_pair(noor::ServiceType::Tcp_Device_Client_Connected_Service , std::make_unique<TcpClient>(newFd, IP, PORT)));
-                            RegisterToEPoll(noor::ServiceType::Tcp_Device_Client_Connected_Service, newFd);
+                            m_services.insert(std::make_pair(noor::ServiceType::Tcp_DeviceMgmtServer_Client_Gateway_Connected_Service , std::make_unique<TcpClient>(newFd, IP, PORT)));
+                            RegisterToEPoll(noor::ServiceType::Tcp_DeviceMgmtServer_Client_Gateway_Connected_Service, newFd);
                         }
                     }
                     break;
-                    case noor::ServiceType::Tls_Tcp_Device_Server_Service:
+                    case noor::ServiceType::Tls_Tcp_DeviceMgmtServer_Server_Gateway_Service:
                     {
                         std::int32_t newFd = -1;
                         struct sockaddr_in addr;
@@ -423,19 +423,19 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                                 std::cout << __TIMESTAMP__ << ": line: " << __LINE__ << " making socker non-blocking for fd: " << newFd << " failed" << std::endl;
                             }
 
-                            m_services.insert(std::make_pair(noor::ServiceType::Tls_Tcp_Device_Client_Connected_Service , std::make_unique<TcpClient>(newFd, IP, PORT)));
-                            auto svc = GetService(noor::ServiceType::Tls_Tcp_Device_Client_Connected_Service, newFd);
+                            m_services.insert(std::make_pair(noor::ServiceType::Tls_Tcp_DeviceMgmtServer_Client_Gateway_Connected_Service , std::make_unique<TcpClient>(newFd, IP, PORT)));
+                            auto svc = GetService(noor::ServiceType::Tls_Tcp_DeviceMgmtServer_Client_Gateway_Connected_Service, newFd);
                             if(svc == nullptr) break;
 
                             std::string cert, pkey;
                             svc->tls().init(cert, pkey);
                             svc->tls().server(newFd);
 
-                            RegisterToEPoll(noor::ServiceType::Tls_Tcp_Device_Client_Connected_Service, newFd);
+                            RegisterToEPoll(noor::ServiceType::Tls_Tcp_DeviceMgmtServer_Client_Gateway_Connected_Service, newFd);
                         }
                     }
                     break;
-                    case noor::ServiceType::Tcp_Device_Console_Server_Service:
+                    case noor::ServiceType::Tcp_DeviceMgmtServer_Server_Console_Service:
                     {
                         std::int32_t newFd = -1;
                         struct sockaddr_in addr;
@@ -452,12 +452,12 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                                 std::cout << __TIMESTAMP__ << ": line: " << __LINE__ << " making socker non-blocking for fd: " << newFd << " failed" << std::endl;
                             }
 
-                            m_services.insert(std::make_pair(noor::ServiceType::Tcp_Device_Console_Connected_Service, std::make_unique<TcpClient>(newFd, IP, PORT)));
-                            RegisterToEPoll(noor::ServiceType::Tcp_Device_Console_Connected_Service, newFd);
+                            m_services.insert(std::make_pair(noor::ServiceType::Tcp_Device_MgmtServer_Client_Console_Connected_Service, std::make_unique<TcpClient>(newFd, IP, PORT)));
+                            RegisterToEPoll(noor::ServiceType::Tcp_Device_MgmtServer_Client_Console_Connected_Service, newFd);
                         }
                     }
                     break;
-                    case noor::ServiceType::Tcp_Device_Client_Connected_Service:
+                    case noor::ServiceType::Tcp_DeviceMgmtServer_Client_Gateway_Connected_Service:
                     {
                         do {
                             //Data is availabe for read. --- tcp_rx()
@@ -485,7 +485,7 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                         }while(0);
                     }
                     break;
-                    case noor::ServiceType::Tls_Tcp_Device_Client_Connected_Service:
+                    case noor::ServiceType::Tls_Tcp_DeviceMgmtServer_Client_Gateway_Connected_Service:
                     {
                         do {
                             //Data is availabe for read. --- tcp_rx()
@@ -512,7 +512,7 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                         }while(0);
                     }
                     break;
-                    case noor::ServiceType::Tcp_Web_Client_Connected_Service:
+                    case noor::ServiceType::Tcp_DeviceMgmtServer_Web_Client_Connected_Service:
                     {
                         do {
                             //Data is availabe for read. --- web_rx()
@@ -552,7 +552,7 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                                !http.uri().compare(0, 14, "/api/v1/db/get") ||
                                !http.uri().compare(0, 15, "/api/v1/db/exec")) {
                                 std::string srNo;
-                                auto svc = GetService(noor::ServiceType::Tcp_Device_Client_Connected_Service, srNo);
+                                auto svc = GetService(noor::ServiceType::Tcp_DeviceMgmtServer_Client_Gateway_Connected_Service, srNo);
                                 if(svc == nullptr) break;
 
                                 svc->restC().uri(http.uri());
@@ -568,7 +568,7 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                         }while(0);
                     }
                     break;
-                    case noor::ServiceType::Tcp_Device_Console_Connected_Service:
+                    case noor::ServiceType::Tcp_Device_MgmtServer_Client_Console_Connected_Service:
                     {
                         //Data is availabe for read. --- tcp_rx()
                         std::string request("");
@@ -583,7 +583,7 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                         }
                     }
                     break;
-                    case noor::ServiceType::Tcp_Device_Console_Client_Service_Async:
+                    case noor::ServiceType::Tcp_DeviceMgmtServer_Client_Gateway_Service_Sync: //when role=client
                     {
                         do {
                             //Data is availabe for read. --- tcp_rx()
@@ -604,17 +604,7 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                         }while(0);
                     }
                     break;
-                    case noor::ServiceType::Tcp_Web_Client_Proxy_Service:
-                    {
-                        //Data is availabe for read. --- tcp_rx()
-                        std::string request("");
-                        auto svc = GetService(serviceType);
-                        if(svc == nullptr) break;
-
-                        auto result = svc->web_rx(Fd, request);
-                    }
-                    break;
-                    case noor::ServiceType::Tcp_Device_Client_Service_Async:
+                    case noor::ServiceType::Tcp_DeviceMgmtServer_Client_Gateway_Service_Async:
                     {
                         do {
                             //Data is availabe for read. --- tcp_rx()
@@ -636,7 +626,7 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                             std::cout << "line: " << __LINE__ << " serviceType: " << serviceType << " received from DMS: " << request << std::endl;
                             {
                                 //Pass on over TLS to Device
-                                auto svc = GetService(noor::ServiceType::Tls_Tcp_Device_Rest_Client_Service_Sync);
+                                auto svc = GetService(noor::ServiceType::Tls_Tcp_Rest_Client_For_Gateway_Service_Sync);
                                 if(svc == nullptr) break;
 
                                 svc->tls().write(request);
@@ -647,7 +637,7 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                     }
                     break;
 
-                    case noor::ServiceType::Tls_Tcp_Device_Rest_Client_Service_Sync:
+                    case noor::ServiceType::Tls_Tcp_Rest_Client_For_Gateway_Service_Sync:
                     {
                         auto svc = GetService(serviceType);
                         if(svc == nullptr) break;
@@ -716,14 +706,14 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                                     std::cout << "line: " << __LINE__ << " serialNumber: " << srNumber << std::endl;
                                 }
                                 {
-                                    auto svc = GetService(noor::ServiceType::Tcp_Device_Client_Service_Async);
+                                    auto svc = GetService(noor::ServiceType::Tcp_DeviceMgmtServer_Client_Gateway_Service_Async);
                                     if(svc == nullptr) break;
 
                                     auto channel = svc->handle();
                                     if(channel > 0 && noor::client_connection::Connected == svc->connected_client(channel)) {
                                         auto len = svc->tcp_tx(channel, result);
                                         if(len > 0) {
-                                            std::cout << "line: " << __LINE__ << " sent to TCP Server len: " << len << " for serviceType: " << noor::ServiceType::Tcp_Device_Client_Service_Async << " result: " << result << std::endl; 
+                                            std::cout << "line: " << __LINE__ << " sent to TCP Server len: " << len << " for serviceType: " << noor::ServiceType::Tcp_DeviceMgmtServer_Client_Gateway_Service_Async << " result: " << result << std::endl; 
                                         }
                                     }
                                     break;
@@ -753,17 +743,20 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                 std::cout << __TIMESTAMP__ << " line: " << __LINE__ << " events: " << ent.events << std::endl;
                 //Connection is closed by other end
                 switch(serviceType) {
-                    case noor::ServiceType::Tcp_Device_Client_Connected_Service:
-                    case noor::ServiceType::Tcp_Web_Client_Connected_Service:
+                    //Connected client of DeviceMgmtServer when DeviceMgmtServer ruuning Server for below services.
+                    case noor::ServiceType::Tcp_DeviceMgmtServer_Web_Client_Connected_Service:
+                    case noor::ServiceType::Tcp_DeviceMgmtServer_Client_Gateway_Connected_Service:
+                    case noor::ServiceType::Tcp_Device_MgmtServer_Client_Console_Connected_Service:
                     {
                         std::cout << "line: " << __LINE__ << " closing connection for service: " << serviceType << " Fd: " << Fd << std::endl;
                         DeleteService(serviceType, Fd);
                         DeRegisterFromEPoll(Fd);
                     }
                     break;
-                    case noor::ServiceType::Tcp_Device_Client_Service_Async:
-                    case noor::ServiceType::Tcp_Device_Console_Client_Service_Async:
-                    case noor::ServiceType::Tcp_Web_Client_Proxy_Service:
+                    //The Client of DeviceMgmtServer is closed/disconnected.
+                    case noor::ServiceType::Tcp_DeviceMgmtServer_Client_Gateway_Service_Async:
+                    case noor::ServiceType::Tcp_DeviceMgmtServer_Client_Console_Service_Async:
+                    case noor::ServiceType::Tls_Tcp_DeviceMgmtServer_Client_Gateway_Service_Async:
                     {
                         //start attempting the connection...
                         auto inst = GetService(serviceType, Fd);
@@ -777,13 +770,12 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                         CreateServiceAndRegisterToEPoll(serviceType, IP, PORT, true);
                     }
                     break;
-                    case noor::ServiceType::Tls_Tcp_Device_Rest_Client_Service_Sync:
-                    case noor::ServiceType::Tls_Tcp_Device_Rest_Client_Service_Async:
+                    case noor::ServiceType::Tls_Tcp_Rest_Client_For_Gateway_Service_Async:
+                    case noor::ServiceType::Tls_Tcp_Rest_Client_For_Gateway_Service_Sync:
                     {
                         std::cout << "line: " << __LINE__ << " connection is closed for service: " << serviceType << std::endl;
                         DeleteService(serviceType);
                         DeRegisterFromEPoll(Fd);
-                        CreateServiceAndRegisterToEPoll(serviceType);
                     }
                     break;
 
@@ -854,10 +846,10 @@ std::int32_t noor::Uniimage::RegisterToEPoll(noor::ServiceType serviceType, std:
     std::uint64_t dd = std::uint64_t(channel);
     evt.data.u64 = std::uint64_t(dd) << 32 | std::uint64_t(serviceType);
 
-    if((serviceType == noor::ServiceType::Tcp_Device_Client_Service_Async) ||
-       (serviceType == noor::ServiceType::Tcp_Device_Console_Client_Service_Async) ||
-       (serviceType == noor::ServiceType::Tls_Tcp_Device_Rest_Client_Service_Async) ||
-       (serviceType == noor::ServiceType::Tls_Tcp_Device_Rest_Client_Service_Sync)) {
+    if((serviceType == noor::ServiceType::Tcp_DeviceMgmtServer_Client_Gateway_Service_Async) ||
+       (serviceType == noor::ServiceType::Tcp_DeviceMgmtServer_Client_Console_Service_Async) ||
+       (serviceType == noor::ServiceType::Tls_Tcp_Rest_Client_For_Gateway_Service_Sync) ||
+       (serviceType == noor::ServiceType::Tls_Tcp_Rest_Client_For_Gateway_Service_Async)) {
         //evt.events = EPOLLOUT | EPOLLERR | EPOLLRDHUP | EPOLLHUP;
         evt.events = EPOLLOUT|EPOLLRDHUP;
         std::cout << "line: " << __LINE__ << " value of events: " << evt.events << " serviceType: " << serviceType << std::endl;
@@ -1302,7 +1294,7 @@ int main(std::int32_t argc, char *argv[]) {
     if(!config["role"].compare("client")) {
         
         if(!config["protocol"].compare("tcp")) {
-            inst.CreateServiceAndRegisterToEPoll(noor::ServiceType::Tcp_Device_Client_Service_Async, config["server-ip"], std::stoi(config["server-port"]), true);
+            inst.CreateServiceAndRegisterToEPoll(noor::ServiceType::Tcp_DeviceMgmtServer_Client_Gateway_Service_Async, config["server-ip"], std::stoi(config["server-port"]), true);
         } else if(!config["protocol"].compare("udp")) {
 
         } else if(!config["protocol"].compare("tls")) {
@@ -1314,9 +1306,9 @@ int main(std::int32_t argc, char *argv[]) {
             std::cout << __TIMESTAMP__ << " line: " << __LINE__ << " protocol is not supported " << std::endl;
             exit(0);
         }
-        inst.CreateServiceAndRegisterToEPoll(noor::ServiceType::Tcp_Device_Console_Client_Service_Async, config["server-ip"], consolePort, true);
+        inst.CreateServiceAndRegisterToEPoll(noor::ServiceType::Tcp_DeviceMgmtServer_Client_Console_Service_Async, config["server-ip"], consolePort, true);
         //inst.CreateServiceAndRegisterToEPoll(noor::ServiceType::Tcp_Web_Client_Proxy_Service, bridgeIP, httpPort, false);
-        inst.CreateServiceAndRegisterToEPoll(noor::ServiceType::Tls_Tcp_Device_Rest_Client_Service_Sync, bridgeIP, httpsPort);
+        inst.CreateServiceAndRegisterToEPoll(noor::ServiceType::Tls_Tcp_Rest_Client_For_Gateway_Service_Sync, bridgeIP, httpsPort);
         
     } else if(!config["role"].compare("server")) {
 
@@ -1324,11 +1316,11 @@ int main(std::int32_t argc, char *argv[]) {
             config["server-ip"] = "127.0.0.1";
         }
         if(!config["protocol"].compare("tcp")) {
-            inst.CreateServiceAndRegisterToEPoll(noor::ServiceType::Tcp_Device_Server_Service, config["server-ip"], std::stoi(config["server-port"]));
+            inst.CreateServiceAndRegisterToEPoll(noor::ServiceType::Tcp_DeviceMgmtServer_Server_Gateway_Service, config["server-ip"], std::stoi(config["server-port"]));
         } else if(!config["protocol"].compare("udp")) {
 
         } else if(!config["protocol"].compare("tls")) {
-            inst.CreateServiceAndRegisterToEPoll(noor::ServiceType::Tls_Tcp_Device_Server_Service, config["server-ip"], std::stoi(config["server-port"]));
+            inst.CreateServiceAndRegisterToEPoll(noor::ServiceType::Tls_Tcp_DeviceMgmtServer_Server_Gateway_Service, config["server-ip"], std::stoi(config["server-port"]));
         } else if(!config["protocol"].compare("dtls")) {
 
         } else {
@@ -1337,8 +1329,8 @@ int main(std::int32_t argc, char *argv[]) {
             exit(0);
         }
 
-        inst.CreateServiceAndRegisterToEPoll(noor::ServiceType::Tcp_Device_Console_Server_Service, config["server-ip"], consolePort);
-        inst.CreateServiceAndRegisterToEPoll(noor::ServiceType::Tcp_Web_Server_Service, config["server-ip"], std::stoi(config["web-port"]));
+        inst.CreateServiceAndRegisterToEPoll(noor::ServiceType::Tcp_DeviceMgmtServer_Server_Console_Service, config["server-ip"], consolePort);
+        inst.CreateServiceAndRegisterToEPoll(noor::ServiceType::Tcp_DeviceMgmtServer_Web_Server_Service, config["server-ip"], std::stoi(config["web-port"]));
     }
 
     auto timeout = 100;
@@ -1575,11 +1567,11 @@ noor::emp noor::Service::uds_rx() {
  */
 std::int32_t noor::Service::tcp_rx(std::int32_t channel, std::string& data, noor::ServiceType svcType) {
 
-    if(Tcp_Device_Client_Connected_Service == svcType) {
+    if(Tcp_DeviceMgmtServer_Client_Gateway_Connected_Service == svcType) {
         // Received from Datastore 
         return(tcp_rx(channel, data));
 
-    } else if(Tcp_Device_Console_Connected_Service == svcType) {
+    } else if(Tcp_Device_MgmtServer_Client_Console_Connected_Service == svcType) {
 
         // Received the Console output
         std::array<char, 2048> payload;
