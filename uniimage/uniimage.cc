@@ -66,8 +66,9 @@ std::int32_t noor::Uniimage::CreateServiceAndRegisterToEPoll(noor::ServiceType s
             case noor::ServiceType::Tcp_Web_Client_Proxy_Service:
             case noor::ServiceType::Tls_Tcp_Device_Rest_Client_Service_Sync:
             {
-                std::int32_t channel;
-                m_services.insert(std::make_pair(serviceType, std::make_unique<TcpClient>(IP, PORT, channel, isAsync)));
+                std::int32_t channel = -1;
+                auto inst = std::make_unique<TcpClient>(IP, PORT, channel, isAsync);
+                m_services.insert(std::make_pair(serviceType, std::move(inst)));
                 RegisterToEPoll(serviceType, channel);
             }
             break;
@@ -77,8 +78,9 @@ std::int32_t noor::Uniimage::CreateServiceAndRegisterToEPoll(noor::ServiceType s
             case noor::ServiceType::Tcp_Web_Server_Service:
             case noor::ServiceType::Tls_Tcp_Device_Server_Service:
             {
-                std::int32_t channel;
-                m_services.insert(std::make_pair(serviceType, std::make_unique<TcpServer>(IP, PORT, channel)));
+                std::int32_t channel = -1;
+                auto inst = std::make_unique<TcpServer>(IP, PORT, channel);
+                m_services.insert(std::make_pair(serviceType, std::move(inst)));
                 RegisterToEPoll(serviceType, channel);
             }
             break;
