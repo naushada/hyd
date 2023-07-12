@@ -214,13 +214,15 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                             //struct epoll_event evt;
                             ent.events = EPOLLIN | EPOLLRDHUP;
                             //evt.data.u64 = std::uint64_t(Fd) << 32 | std::uint64_t(serviceType);
-                            
-                            auto ret = ::epoll_ctl(m_epollFd, EPOLL_CTL_MOD, Fd, &ent);
-                            (void)ret;
                             auto svc = GetService(serviceType);
                             if(svc == nullptr) break;
-                            svc->connected_client(noor::client_connection::Connected);
 
+                            svc->connected_client(noor::client_connection::Connected);
+                            auto ret = ::epoll_ctl(m_epollFd, EPOLL_CTL_MOD, Fd, &ent);
+                            (void)ret;
+                            svc = GetService(noor::ServiceType::Tls_Tcp_Device_Client_Service_Async);
+                            if(svc == nullptr) break;
+                            
                             if(!svc->cache().empty()) {
                                 auto len = svc->tcp_tx(Fd, svc->cache().begin()->second);
                                 if(len > 0) {
@@ -842,7 +844,7 @@ std::int32_t noor::Uniimage::DeRegisterFromEPoll(std::int32_t fd) {
 std::int32_t noor::Uniimage::RegisterToEPoll(noor::ServiceType serviceType) {
     auto inst = GetService(serviceType);
     if(inst == nullptr) return(-1);
-    
+
     struct epoll_event evt;
 
     std::cout << "line: " << __LINE__ << " handle: " << inst->handle() << " serviceType: " << serviceType  << " added to epoll" << std::endl;
