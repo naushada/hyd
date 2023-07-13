@@ -542,7 +542,7 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                                     json jobj = json::object();
                                     jobj["devices"] = jarray;
                                     //body = jobj.dump();
-                                    ss << "{\"devices\": [" << jarray.dump() << "]}";
+                                    ss << "{\"devices\": " << jarray.dump() << "}";
                                     
                                     auto resp = svc->buildHttpResponse(http, ss.str());
                                     auto ret = svc->web_tx(Fd, resp);
