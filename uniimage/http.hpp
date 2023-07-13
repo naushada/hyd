@@ -32,7 +32,7 @@ class noor::Http {
                     
                     if(!m_header.compare(0, 8, "HTTP/1.1")) {
                         //this is a response.
-                        auto res = m_header.find(' ', 9);
+                        auto res = m_header.find_first_of(' ', 9);
                         if(res != std::string::npos) {
                             m_status_code = m_header.substr(9, res);
                             std::cout << __TIMESTAMP__ << " line: " << __LINE__ << " status_code: " << m_status_code << std::endl;
