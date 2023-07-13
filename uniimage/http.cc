@@ -126,7 +126,6 @@ void noor::Http::parse_header(const std::string& in)
    * GET/POST/PUT/DELETE <uri>?uriName[&param=value]* HTTP/1.1\r\n | HTTP/1.1 200 OK
    */
   std::getline(input, line_str);
-  input.str("");
   
   auto offset = input.str().find_last_of("\r\n\r\n", input.str().length(), 4);
   if(std::string::npos != offset) {
