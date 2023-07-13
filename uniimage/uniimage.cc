@@ -541,7 +541,7 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                                     json jobj = json::object();
                                     jobj["devices"] = jarray;
                                     body = jobj.dump();
-                                    auto resp = svc->buildHttpResponse(http, body);
+                                    auto resp = svc->buildHttpResponse(http, jobj["devices"].get<std::string>());
                                     auto ret = svc->web_tx(Fd, resp);
                                     std::cout << "line: " << __LINE__ << " sent to webui length: " << ret << " response: " << body << std::endl;
                                 }
