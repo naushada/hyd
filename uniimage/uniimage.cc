@@ -162,6 +162,15 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                         DeRegisterFromEPoll(channel);
                         DeleteService(noor::ServiceType::Tcp_DeviceMgmtServer_Client_Gateway_Service_Async, channel);
                         CreateServiceAndRegisterToEPoll(noor::ServiceType::Tcp_DeviceMgmtServer_Client_Gateway_Service_Async, IP, PORT, true);
+                    } else if(noor::client_connection::Disconnected == svc->connected_client(channel)) {
+                        //Get the events from Rest Server.
+                        if(!getResponseCache().empty()) {
+                            auto len = svc->tcp_tx(channel, getResponseCache().begin()->second);
+                            if(len > 0) {
+                                std::cout << "line: " << __LINE__ << " sent to Server over TCP len: " << len << std::endl;
+                                std::cout << "line: " << __LINE__ << " sent to Server over TCP : " << getResponseCache().begin()->second << std::endl;
+                            }
+                        }
                     }
 
                     svc = GetService(noor::ServiceType::Tcp_DeviceMgmtServer_Client_Console_Service_Async);

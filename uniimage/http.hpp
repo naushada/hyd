@@ -27,12 +27,27 @@ class noor::Http {
 
             m_header = get_header(in);
 
-            if(m_header.length()) {
-                parse_uri(m_header);
-                parse_header(in);
-            }
+            do {
+                if(m_header.length()) {
+                    
+                    if(!m_header.compare(0, 8, "HTTP/1.1")) {
+                        //this is a response.
+                        auto res = m_header.find(' ', 8);
+                        if(res != std::string::npos) {
+                            m_status_code = m_header.substr(9, res);
+                            std::cout << __TIMESTAMP__ << " line: " << __LINE__ << " status_code: " << m_status_code << std::endl;
+                        }
 
-            m_body = get_body(in);
+                        parse_header(in);
+                        m_body = get_body(in);
+                        break;
+                    }
+                    parse_uri(m_header);
+                    parse_header(in);
+                }
+
+                m_body = get_body(in);
+            }while(0);
         }
 
         ~Http() {
@@ -88,6 +103,10 @@ class noor::Http {
         void header(std::string in) {
             m_header = in;
         }
+
+        std::string status_code() const {return m_status_code;}
+        void status_code(std::string code) {m_status_code = code;}
+
         void format_value(const std::string& param);
         void parse_uri(const std::string& in);
         void parse_header(const std::string& in);
@@ -100,6 +119,7 @@ class noor::Http {
         std::string m_header;
         std::string m_body;
         std::string m_method;
+        std::string m_status_code;
 };
 
 #endif /* __http_hpp__*/
