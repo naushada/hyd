@@ -658,10 +658,12 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                         std::int32_t header_len = -1;
                         std::int32_t payload_len = -1;
                         bool is_conn_closed = false;
+                        std::string status;
                         do {
                             auto ret = svc->tls().peek(out);
                             if(ret > 0) {
                                 Http http(out);
+                                status.assign(http.status_code());
                                 auto ct = http.value("Content-Length");
                                 header_len = http.get_header(out).length() + 1;
 
@@ -705,6 +707,19 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                                 break;
                             }
 
+                            if(!svc->restC().status_code().compare(0, 3, "401") || !svc->restC().status_code().compare(0, 3, "403")) {
+                                //missing authentication or invalid authentication
+                                //Get Token for Rest Client
+                                json jobj = json::object();
+                                jobj["login"] = "test";
+                                jobj["password"] = "test123";
+
+                                auto req = svc->restC().getToken(jobj.dump());
+                                std::cout << "line: " << __LINE__ << " request sent: " << std::endl << req << std::endl;
+                                auto len = svc->tls().write(req);
+                                (void)len;
+                                break;
+                            }
                             std::string result("");
                             auto req = svc->restC().processResponse(out, body, result);
                             if(result.length()) {
@@ -1054,6 +1069,23 @@ std::string noor::RestClient::buildRequest(const std::string& in, std::vector<st
     return(std::string());
 }
 
+std::string noor::RestClient::getEvents(std::string uri) {
+   std::string host("192.168.1.1:443");
+    std::stringstream ss("");
+    m_uri.assign("/api/v1/events?timeout=10");
+
+    ss << "GET " << m_uri <<" HTTP/1.1\r\n"
+        << "Host: " << host << "\r\n"
+        << "Content-Type: application/vnd.api+json\r\n"
+        << "Connection: keep-alive\r\n"
+        << "Accept: application/vnd.api+json\r\n"
+        << "Authorization: Bearer " << m_cookies << "\r\n"
+        << "Content-Length: 0" << "\r\n"
+        << "\r\n";
+
+    return(ss.str());
+ 
+}
 /**
  * @brief 
  * 
@@ -1201,8 +1233,8 @@ std::string noor::RestClient::processResponse(const std::string& http_header, co
 
             result.assign(ind.dump());
         }
-    } else {
-
+    } else if(!uri().compare(0, 14, "/api/v1/events")) {
+        
     }
     return(std::string());
 }

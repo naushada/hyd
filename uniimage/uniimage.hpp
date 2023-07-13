@@ -401,17 +401,21 @@ class noor::RestClient {
         std::string registerDatapoints(const std::vector<std::string>& dps);
         std::string buildRequest(const std::string& in, std::vector<std::string> param = {});
         std::string processResponse(const std::string& http_header, const std::string& http_body, std::string &svc);
+        std::string getEvents(std::string uri="/api/v1/events");
         std::string uri() const {return(m_uri);}
         void uri(std::string path) { m_uri = path;}
         std::string cookies() const { return(m_cookies);}
         void cookies(std::string token) {m_cookies = token;}
         void deviceName(std::string product) {m_deviceName = product;}
         std::string deviceName() const { return(m_deviceName);}
+        std::string status_code() {return m_status_code;}
+        void status_code(std::string code) {m_status_code = code;}
 
     private:
         std::string m_cookies;
         std::string m_uri;
         std::string m_deviceName;
+        std::string m_status_code;
 };
 
 class noor::Service {
