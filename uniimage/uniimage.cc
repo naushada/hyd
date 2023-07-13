@@ -730,6 +730,31 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                         }while(0);
                     }
                     break;
+                    case noor::ServiceType::Tcp_DeviceMgmtServer_Client_Console_Service_Async:
+                    {
+                        do {
+                            //Data is availabe for read. --- tcp_rx()
+                            std::string request("");
+                            auto svc = GetService(serviceType);
+                            if(svc == nullptr) break;
+
+                            auto result = svc->tcp_rx(Fd, request);
+
+                            if(!result) {
+                                std::cout << "line: " << __LINE__ << " closing the connection for Service: " << serviceType << std::endl;
+                                auto IP = svc->ip();
+                                auto PORT = svc->port();
+                                DeleteService(serviceType);
+                                DeRegisterFromEPoll(Fd);
+                                CreateServiceAndRegisterToEPoll(serviceType, IP, PORT,true);
+                                break;
+                            }
+
+                            std::cout << "line: " << __LINE__ << " serviceType: " << serviceType << " received from DMS: " << request << std::endl;
+
+                        }while(0);
+                    }
+                    break;
 
                     default:
                     {
