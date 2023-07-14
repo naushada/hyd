@@ -1342,7 +1342,7 @@ int main(std::int32_t argc, char *argv[]) {
     std::int32_t option_index = 0;
     std::unordered_map<std::string, std::string> config;
     
-    while ((c = getopt_long(argc, argv, "r:i:p:w:t:a:s:e:o:m:", options.data(), &option_index)) != -1) {
+    while ((c = getopt_long(argc, argv, "r:i:p:w:t:a:s:e:o:m:u:d:", options.data(), &option_index)) != -1) {
         switch(c) {
             case 'r':
             {
