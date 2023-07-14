@@ -151,37 +151,69 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
             std::cout << "line: " << __LINE__ << "nReady: " << nReady << std::endl;
             continue;
         } else if(!nReady) {
-            //Timeout happens
+            //Timeout happens -- for client role only.
             if(get_config()["role"].compare("server")) {
-                auto svc = GetService(noor::ServiceType::Tcp_DeviceMgmtServer_Client_Gateway_Service_Async);
-                if(svc != nullptr) {
-                    auto channel = svc->handle();
-                    if(noor::client_connection::Disconnected == svc->connected_client(channel)) {
-                        auto IP = svc->ip();
-                        auto PORT = svc->port();
-                        DeRegisterFromEPoll(channel);
-                        DeleteService(noor::ServiceType::Tcp_DeviceMgmtServer_Client_Gateway_Service_Async, channel);
-                        CreateServiceAndRegisterToEPoll(noor::ServiceType::Tcp_DeviceMgmtServer_Client_Gateway_Service_Async, IP, PORT, true);
-                    } else if(noor::client_connection::Disconnected == svc->connected_client(channel)) {
-                        //Get the events from Rest Server.
-                        if(!getResponseCache().empty()) {
-                            auto len = svc->tcp_tx(channel, getResponseCache().begin()->second);
-                            if(len > 0) {
-                                std::cout << "line: " << __LINE__ << " sent to Server over TCP len: " << len << std::endl;
-                                std::cout << "line: " << __LINE__ << " sent to Server over TCP : " << getResponseCache().begin()->second << std::endl;
+                if(!get_config()["protocol"].compare(0, 3, "tcp")) {
+                    auto svc = GetService(noor::ServiceType::Tcp_DeviceMgmtServer_Client_Gateway_Service_Async);
+                    if(svc != nullptr) {
+                        auto channel = svc->handle();
+                        if(noor::client_connection::Disconnected == svc->connected_client(channel)) {
+                            auto IP = svc->ip();
+                            auto PORT = svc->port();
+                            DeRegisterFromEPoll(channel);
+                            DeleteService(noor::ServiceType::Tcp_DeviceMgmtServer_Client_Gateway_Service_Async, channel);
+                            CreateServiceAndRegisterToEPoll(noor::ServiceType::Tcp_DeviceMgmtServer_Client_Gateway_Service_Async, IP, PORT, true);
+                        } else if(noor::client_connection::Disconnected == svc->connected_client(channel)) {
+                            //Get the events from Rest Server.
+                            if(!getResponseCache().empty()) {
+                                auto len = svc->tcp_tx(channel, getResponseCache().begin()->second);
+                                if(len > 0) {
+                                    std::cout << "line: " << __LINE__ << " sent to Server over TCP len: " << len << std::endl;
+                                    std::cout << "line: " << __LINE__ << " sent to Server over TCP : " << getResponseCache().begin()->second << std::endl;
+                                }
                             }
                         }
                     }
 
                     svc = GetService(noor::ServiceType::Tcp_DeviceMgmtServer_Client_Console_Service_Async);
-                    channel = svc->handle();
-                    if(noor::client_connection::Disconnected == svc->connected_client(channel)) {
-                        auto IP = svc->ip();
-                        auto PORT = svc->port();
-                        DeRegisterFromEPoll(channel);
-                        DeleteService(noor::ServiceType::Tcp_DeviceMgmtServer_Client_Console_Service_Async, channel);
-                        CreateServiceAndRegisterToEPoll(noor::ServiceType::Tcp_DeviceMgmtServer_Client_Console_Service_Async, IP, PORT, true);
+                    if(svc != nullptr) {
+                        auto channel = svc->handle();
+                        if(noor::client_connection::Disconnected == svc->connected_client(channel)) {
+                            auto IP = svc->ip();
+                            auto PORT = svc->port();
+                            DeRegisterFromEPoll(channel);
+                            DeleteService(noor::ServiceType::Tcp_DeviceMgmtServer_Client_Console_Service_Async, channel);
+                            CreateServiceAndRegisterToEPoll(noor::ServiceType::Tcp_DeviceMgmtServer_Client_Console_Service_Async, IP, PORT, true);
+                        }
                     }
+                } else if(!get_config()["protocol"].compare(0, 3, "tls")) {
+                    auto svc = GetService(noor::ServiceType::Tls_Tcp_DeviceMgmtServer_Client_Gateway_Service_Async);
+                    if(svc != nullptr) {
+                        auto channel = svc->handle();
+                        if(noor::client_connection::Disconnected == svc->connected_client(channel)) {
+                            auto IP = svc->ip();
+                            auto PORT = svc->port();
+                            DeRegisterFromEPoll(channel);
+                            DeleteService(noor::ServiceType::Tls_Tcp_DeviceMgmtServer_Client_Gateway_Service_Async, channel);
+                            CreateServiceAndRegisterToEPoll(noor::ServiceType::Tls_Tcp_DeviceMgmtServer_Client_Gateway_Service_Async, IP, PORT, true);
+                        } else if(noor::client_connection::Disconnected == svc->connected_client(channel)) {
+                            //Get the events from Rest Server.
+                            if(!getResponseCache().empty()) {
+                                std::int32_t req_len = getResponseCache().begin()->second.length();
+                                auto payload_len = htonl(req_len);
+                                std::stringstream data("");
+                                data.write (reinterpret_cast <char *>(&payload_len), sizeof(std::int32_t));
+                                data << getResponseCache().begin()->second;
+                                auto len = svc->tls().write(data.str());
+                                if(len > 0) {
+                                    std::cout << "line: " << __LINE__ << " sent to Server over TLS len: " << len << std::endl;
+                                    std::cout << "line: " << __LINE__ << " sent to Server over TLS : " << getResponseCache().begin()->second << std::endl;
+                                }
+                            }
+                        }
+                    }
+                } else if(!get_config()["protocol"].compare(0, 4, "dtls")) {
+
                 }
             }
             continue;
@@ -197,7 +229,7 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                 std::cout << __TIMESTAMP__ << " line: " << __LINE__ << " EPOLLOUT is set for serviceType: " << serviceType << " channel: " << Fd << std::endl;
                 std::cout << __TIMESTAMP__ << " line: " << __LINE__ << " events: " << ent.events << " serviceType: " << serviceType << std::endl;
                 switch(serviceType) {
-                    case noor::ServiceType::Tcp_DeviceMgmtServer_Client_Gateway_Service_Async:
+                    case noor::ServiceType::Tcp_DeviceMgmtServer_Client_Gateway_Service_Async: //Client of DMS over TCP
                     {
                         do {
                             // check that there's no error for socket.
@@ -245,7 +277,7 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                     }
                     break;
 
-                    case noor::ServiceType::Tls_Tcp_DeviceMgmtServer_Client_Gateway_Service_Async:
+                    case noor::ServiceType::Tls_Tcp_DeviceMgmtServer_Client_Gateway_Service_Async: //Client of DMS over TLS
                     {
                         do {
                             // check that there's no error for socket.
@@ -284,9 +316,16 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                             svc->tls().client();
 
                             if(!getResponseCache().empty()) {
-                                auto len = svc->tls().write(getResponseCache().begin()->second);
+                                std::int32_t req_len = getResponseCache().begin()->second.length();
+                                auto payload_len = htonl(req_len);
+                                std::stringstream data("");
+                                data.write (reinterpret_cast <char *>(&payload_len), sizeof(std::int32_t));
+                                data << getResponseCache().begin()->second;
+                                auto len = svc->tls().write(data.str());
+
                                 if(len > 0) {
-                                    std::cout << "line: " << __LINE__ << " sent to Server over TLS len: " << len << std::endl; 
+                                    std::cout << "line: " << __LINE__ << " sent to Device Mgmt Server over TLS len: " << len << std::endl;
+                                    break;
                                 }
                             }
                         } while(0);
@@ -328,7 +367,7 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                         } while(0);
                     }
                     break;
-                    case noor::ServiceType::Tls_Tcp_Rest_Client_For_Gateway_Service_Async:
+                    case noor::ServiceType::Tls_Tcp_Rest_Client_For_Gateway_Service_Async: //Client of Rest Server at Device.
                     case noor::ServiceType::Tls_Tcp_Rest_Client_For_Gateway_Service_Sync:
                     {
                         //tcp connection is established - do tls handshake
@@ -338,16 +377,14 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                         svc->tls().init(Fd);
                         svc->tls().client();
 
-                        //struct epoll_event evt;
                         ent.events = EPOLLIN |EPOLLRDHUP;
-                        //evt.data.u64 = std::uint64_t(Fd) << 32 | std::uint64_t(serviceType);
-                        
                         auto ret = ::epoll_ctl(m_epollFd, EPOLL_CTL_MOD, Fd, &ent);
                         (void)ret;
+
                         //Get Token for Rest Client
                         json jobj = json::object();
-                        jobj["login"] = "test";
-                        jobj["password"] = "test123";
+                        jobj["login"] = get_config()["userid"];
+                        jobj["password"] = get_config()["password"];
 
                         auto req = svc->restC().getToken(jobj.dump());
                         std::cout << "line: " << __LINE__ << " request sent: " << std::endl << req << std::endl;
@@ -432,11 +469,12 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                                 std::cout << __TIMESTAMP__ << ": line: " << __LINE__ << " making socker non-blocking for fd: " << newFd << " failed" << std::endl;
                             }
 
-                            m_services.insert(std::make_pair(noor::ServiceType::Tls_Tcp_DeviceMgmtServer_Client_Gateway_Connected_Service , std::make_unique<TcpClient>(newFd, IP, PORT)));
+                            m_services.insert(std::make_pair(noor::ServiceType::Tls_Tcp_DeviceMgmtServer_Client_Gateway_Connected_Service ,
+                                              std::make_unique<TcpClient>(newFd, IP, PORT)));
                             auto svc = GetService(noor::ServiceType::Tls_Tcp_DeviceMgmtServer_Client_Gateway_Connected_Service, newFd);
                             if(svc == nullptr) break;
 
-                            std::string cert, pkey;
+                            std::string cert("../cert/cert.pem"), pkey("../cert/pkey.pem");
                             svc->tls().init(cert, pkey);
                             svc->tls().server(newFd);
 
@@ -494,30 +532,54 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                         }while(0);
                     }
                     break;
-                    case noor::ServiceType::Tls_Tcp_DeviceMgmtServer_Client_Gateway_Connected_Service:
+                    case noor::ServiceType::Tls_Tcp_DeviceMgmtServer_Client_Gateway_Connected_Service: //The Tls client on device is connectedto DMS  
                     {
                         do {
                             //Data is availabe for read. --- tcp_rx()
                             std::string request("");
                             auto svc = GetService(serviceType, Fd);
                             if(svc == nullptr) break;
-                            auto result = svc->tcp_rx(Fd, request);
-                            std::cout << "line: " << __LINE__ << " result: " << result << " connected client " << std::endl;
+                            std::string out;
+                            auto len = svc->tls().read(out, 4);
+                            if(len > 0 && len == 4) {
+                                std::uint32_t payload_len = 0;
+                                std::istringstream istrstr;
+                                istrstr.rdbuf()->pubsetbuf(out.data(), len);
+                                istrstr.read(reinterpret_cast<char *>(&payload_len), sizeof(payload_len));
+                                std::int32_t offset = 0;
+                                payload_len = ntohl(payload_len);
+                                /////////
+                                out.clear();
+                                len = svc->tls().read(out, payload_len);
+                                if(len < 0) {
+                                    //Read from TLS server is failed.
+                                    break;
+                                }
+                                //Feed it over REST interface to Device. 
+                                svc = GetService(noor::ServiceType::Tls_Tcp_Rest_Client_For_Gateway_Service_Async);
+                                if(svc == nullptr) {
+                                    //Rest Client Connection is closed, Establish it now for this Request.
+                                    json jobj = json::object();
+                                    jobj["login"] = get_config()["userid"];
+                                    jobj["password"] = get_config()["password"];
 
-                            if(!result) {
-                                //TCP Connection is closed.
-                                std::cout << "line: " << __LINE__ << " closing the client connection " << std::endl;
+                                    auto req = svc->restC().getToken(jobj.dump());
+                                    std::cout << "line: " << __LINE__ << " request sent: " << std::endl << req << std::endl;
+                                    auto len = svc->tls().write(req);
+                                    (void)len;
+                                    svc->restC().future(svc->restC().promise().get_future());
+                                    //fallthrough
+                                }
+                                len = svc->tls().write(out);
+                                if(len > 0) {
+                                    std::cout << __TIMESTAMP__ << " line: " << __LINE__ << " Request feed to device over REST interface " << std::endl;
+                                    break;
+                                }
+                            } else if(!len) {
+                                //Client is closed
                                 DeleteService(serviceType, Fd);
                                 DeRegisterFromEPoll(Fd);
-                                break;
                             }
-                            json jobj = json::parse(request);
-                            auto srNumber = jobj["serialNumber"].get<std::string>();
-                            //learn the serial number now.
-                            svc->serialNumber(srNumber);
-                            getResponseCache().insert(std::pair(srNumber, request));
-                            std::cout << "line: " << __LINE__ << " serialNumber: " << srNumber << " received from device over TCP : " << request << std::endl;
-
                         }while(0);
                     }
                     break;
@@ -711,13 +773,14 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                                 //missing authentication or invalid authentication
                                 //Get Token for Rest Client
                                 json jobj = json::object();
-                                jobj["login"] = "test";
-                                jobj["password"] = "test123";
+                                jobj["login"] = get_config()["userid"];
+                                jobj["password"] = get_config()["password"];
 
                                 auto req = svc->restC().getToken(jobj.dump());
                                 std::cout << "line: " << __LINE__ << " request sent: " << std::endl << req << std::endl;
                                 auto len = svc->tls().write(req);
                                 (void)len;
+                                svc->restC().future(svc->restC().promise().get_future());
                                 break;
                             }
                             std::string result("");
@@ -1096,10 +1159,16 @@ std::string noor::RestClient::getEvents(std::string uri) {
  */
 std::string noor::RestClient::processResponse(const std::string& http_header, const std::string& http_body, std::string& result) {
     std::cout << "line: " << __LINE__ << " header: " <<std::endl << http_header << " http_body: " << http_body << std::endl;
-
+    
     if(!uri().compare(0, 19, "/api/v1/auth/tokens")) {
         json json_object = json::parse(http_body);
         m_cookies.assign(json_object["data"]["access_token"]);
+
+        if(pending_request()) {
+            //release the future now
+            promise().set_value();
+            return(std::string());
+        }
         return(authorizeToken(http_body, "test"));
 
     } else if(!uri().compare(0, 26, "/api/v1/auth/authorization")) {
@@ -1249,9 +1318,11 @@ std::vector<struct option> options = {
     {"protocol",                  required_argument, 0, 't'},
     {"self-ip",                   required_argument, 0, 's'},
     {"self-port",                 required_argument, 0, 'e'},
-    {"time-out",                  required_argument, 0, 'o'},
+    {"timeout",                   required_argument, 0, 'o'},
     {"machine",                   optional_argument, 0, 'm'},
     {"config-json",               optional_argument, 0, 'c'},
+    {"userid",                    optional_argument, 0, 'u'},
+    {"password",                  optional_argument, 0, 'd'}
 };
 
 /*
@@ -1322,7 +1393,7 @@ int main(std::int32_t argc, char *argv[]) {
             break;
             case 'o':
             {
-                config.emplace(std::make_pair("time-out", optarg));
+                config.emplace(std::make_pair("timeout", optarg));
             }
             break;
             case 'm':
@@ -1330,7 +1401,16 @@ int main(std::int32_t argc, char *argv[]) {
                 config.emplace(std::make_pair("machine", optarg));
             }
             break;
-
+            case 'u':
+            {
+                config.emplace(std::make_pair("userid", optarg));
+            }
+            break;
+            case 'd':
+            {
+                config.emplace(std::make_pair("password", optarg));
+            }
+            break;
             default:
             {
                 std::cout << "--role <client|server> " << std::endl
@@ -1341,8 +1421,10 @@ int main(std::int32_t argc, char *argv[]) {
                           << "--self-port <self port for bind to receive request> " << std::endl
                           << "--protocol  <tcp|udp|unix/tls> " << std::endl
                           << "--wan-interface-instance <c1|c3|c4|c5|w1|w2|e1|e2|e3> " << std::endl
-                          << "--time-out <value in ms> " << std::endl
-                          << "--machine <host|> " << std::endl;
+                          << "--timeout     <value in ms> " << std::endl
+                          << "--machine     <host|> " << std::endl
+                          << "--userid      <Rest Client User ID> " << std::endl
+                          << "--password    <Rest Client Password> " << std::endl;
                           return(-1);
             }
         }
@@ -1363,11 +1445,15 @@ int main(std::int32_t argc, char *argv[]) {
     if(!config["role"].compare("client")) {
         
         if(!config["protocol"].compare("tcp")) {
-            inst.CreateServiceAndRegisterToEPoll(noor::ServiceType::Tcp_DeviceMgmtServer_Client_Gateway_Service_Async, config["server-ip"], std::stoi(config["server-port"]), true);
+            inst.CreateServiceAndRegisterToEPoll(noor::ServiceType::Tcp_DeviceMgmtServer_Client_Gateway_Service_Async,
+                                                 config["server-ip"], std::stoi(config["server-port"]),
+                                                 true);
         } else if(!config["protocol"].compare("udp")) {
 
         } else if(!config["protocol"].compare("tls")) {
-
+            inst.CreateServiceAndRegisterToEPoll(noor::ServiceType::Tls_Tcp_DeviceMgmtServer_Client_Gateway_Service_Async, 
+                                                 config["server-ip"], std::stoi(config["server-port"]),
+                                                 true);
         } else if(!config["protocol"].compare("dtls")) {
 
         } else {
@@ -1402,9 +1488,10 @@ int main(std::int32_t argc, char *argv[]) {
         inst.CreateServiceAndRegisterToEPoll(noor::ServiceType::Tcp_DeviceMgmtServer_Web_Server_Service, config["server-ip"], std::stoi(config["web-port"]));
     }
 
+    //The Unit of timeout is in millisecond.
     auto timeout = 100;
-    if(config["time-out"].length()) {
-        timeout = std::stoi(config["time-out"]);
+    if(config["timeout"].length()) {
+        timeout = std::stoi(config["timeout"]);
     }
     // timeout is in milli seconds
     inst.start(timeout);

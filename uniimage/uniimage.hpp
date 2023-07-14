@@ -36,6 +36,7 @@
 #include <tuple>
 #include <getopt.h>
 #include <atomic>
+#include <future>
 
 #include <openssl/bio.h>
 #include <openssl/ssl.h>
@@ -201,6 +202,18 @@ class noor::Tls {
             SSL_CTX_set_options(m_ssl_ctx.get(), SSL_OP_NO_SSLv2);
         }
 
+        Tls(bool role): m_method(SSLv23_server_method()), 
+                        m_ssl_ctx(SSL_CTX_new(m_method), SSL_CTX_free),
+                        m_ssl(SSL_new(m_ssl_ctx.get()), SSL_free) {
+
+            OpenSSL_add_all_algorithms();
+            SSL_load_error_strings();
+            /* ---------------------------------------------------------- *
+             * Disabling SSLv2 will leave v3 and TSLv1 for negotiation    *
+             * ---------------------------------------------------------- */
+            SSL_CTX_set_options(m_ssl_ctx.get(), SSL_OP_NO_SSLv2);
+        }
+
         ~Tls() {
             
         }
@@ -219,7 +232,7 @@ class noor::Tls {
             return(rc);
         }
 
-        std::int32_t init(const std::string &cert, const std::string& pkey) {
+        std::int32_t init(const std::string &cert="../cert/cert.pem", const std::string& pkey="../cert/pkey.pem") {
             std::int32_t ret = -1;
             //For tls server
             if(cert.length() && pkey.length()) {
@@ -394,7 +407,7 @@ class noor::Tls {
  */
 class noor::RestClient {
     public:
-        RestClient() : m_cookies(""), m_uri(""), m_deviceName("") {}
+        RestClient() : m_cookies(""), m_uri(""), m_deviceName(""), m_pending_request(false), m_promise(), m_future() {}
         ~RestClient() {}
         std::string getToken(const std::string& in);
         std::string authorizeToken(const std::string& in, const std::string& user);
@@ -410,12 +423,21 @@ class noor::RestClient {
         std::string deviceName() const { return(m_deviceName);}
         std::string status_code() {return m_status_code;}
         void status_code(std::string code) {m_status_code = code;}
+        bool pending_request() const {return m_pending_request;}
+        void pending_request(bool status) { m_pending_request = status;}
+        auto& promise() {return m_promise;}
+        auto& future() {return m_future;}
+        void future(const auto& ft) {m_future = ft;}
+        void promise(const auto& pr) {m__promise = pr;}
 
     private:
         std::string m_cookies;
         std::string m_uri;
         std::string m_deviceName;
         std::string m_status_code;
+        bool m_pending_request;
+        std::promise<void> m_promise;
+        std::future<void> m_future;
 };
 
 class noor::Service {
