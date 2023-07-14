@@ -407,7 +407,7 @@ class noor::Tls {
  */
 class noor::RestClient {
     public:
-        RestClient() : m_cookies(""), m_uri(""), m_deviceName(""), m_pending_request(false), m_promise(), m_future() {}
+        RestClient() : m_cookies(""), m_uri(""), m_deviceName(""), m_pending_request(false), m_promise() {}
         ~RestClient() {}
         std::string getToken(const std::string& in);
         std::string authorizeToken(const std::string& in, const std::string& user);
@@ -426,9 +426,7 @@ class noor::RestClient {
         bool pending_request() const {return m_pending_request;}
         void pending_request(bool status) { m_pending_request = status;}
         auto& promise() {return m_promise;}
-        auto& future() {return m_future;}
-        void future(const auto& ft) {m_future = ft;}
-        void promise(const auto& pr) {m__promise = pr;}
+        void promise(const auto& pr) {m_promise = pr;}
 
     private:
         std::string m_cookies;
@@ -437,7 +435,6 @@ class noor::RestClient {
         std::string m_status_code;
         bool m_pending_request;
         std::promise<void> m_promise;
-        std::future<void> m_future;
 };
 
 class noor::Service {

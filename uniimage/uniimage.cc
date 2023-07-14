@@ -567,7 +567,7 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                                     std::cout << "line: " << __LINE__ << " request sent: " << std::endl << req << std::endl;
                                     auto len = svc->tls().write(req);
                                     (void)len;
-                                    svc->restC().future(svc->restC().promise().get_future());
+                                    auto future = svc->restC().promise().get_future();
                                     //fallthrough
                                 }
                                 len = svc->tls().write(out);
@@ -780,7 +780,6 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                                 std::cout << "line: " << __LINE__ << " request sent: " << std::endl << req << std::endl;
                                 auto len = svc->tls().write(req);
                                 (void)len;
-                                svc->restC().future(svc->restC().promise().get_future());
                                 break;
                             }
                             std::string result("");
