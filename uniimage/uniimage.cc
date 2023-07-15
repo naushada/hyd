@@ -542,6 +542,7 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                             if(svc == nullptr) break;
                             std::string out;
                             auto len = svc->tls().read(out, 4);
+                            std::cout << __TIMESTAMP__ << " line: " << __LINE__ << " len: " << len << std::endl;
                             if(len > 0 && len == 4) {
                                 std::uint32_t payload_len = 0;
                                 std::istringstream istrstr;
