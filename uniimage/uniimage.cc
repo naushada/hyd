@@ -65,6 +65,7 @@ std::int32_t noor::Uniimage::CreateServiceAndRegisterToEPoll(noor::ServiceType s
             case noor::ServiceType::Tcp_DeviceMgmtServer_Client_Console_Service_Sync:
             case noor::ServiceType::Tls_Tcp_Rest_Client_For_Gateway_Service_Sync:
             case noor::ServiceType::Tls_Tcp_Rest_Client_For_Gateway_Service_Async:
+            case noor::ServiceType::Tls_Tcp_DeviceMgmtServer_Client_Gateway_Service_Async:
             {
                 std::int32_t channel = -1;
                 auto inst = std::make_unique<TcpClient>(IP, PORT, channel, isAsync);
@@ -302,7 +303,7 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                                     break;
                                 }
                             }
-                            std::cout << "line: " << __LINE__ << " Tls Tcp client is connected successfully " << std::endl;
+                            std::cout << "line: " << __LINE__ << " Tls Tcp client is connected to DMS successfully " << std::endl;
                             //There's no error on the socket
                             //struct epoll_event evt;
                             ent.events = EPOLLIN |EPOLLRDHUP;
@@ -963,8 +964,8 @@ std::int32_t noor::Uniimage::RegisterToEPoll(noor::ServiceType serviceType, std:
     if((serviceType == noor::ServiceType::Tcp_DeviceMgmtServer_Client_Gateway_Service_Async) ||
        (serviceType == noor::ServiceType::Tcp_DeviceMgmtServer_Client_Console_Service_Async) ||
        (serviceType == noor::ServiceType::Tls_Tcp_Rest_Client_For_Gateway_Service_Sync) ||
-       (serviceType == noor::ServiceType::Tls_Tcp_Rest_Client_For_Gateway_Service_Async)) {
-        //evt.events = EPOLLOUT | EPOLLERR | EPOLLRDHUP | EPOLLHUP;
+       (serviceType == noor::ServiceType::Tls_Tcp_Rest_Client_For_Gateway_Service_Async) ||
+       (serviceType == noor::ServiceType::Tls_Tcp_DeviceMgmtServer_Client_Gateway_Service_Async)) {
         evt.events = EPOLLOUT|EPOLLRDHUP;
         std::cout << "line: " << __LINE__ << " value of events: " << evt.events << " serviceType: " << serviceType << std::endl;
 
@@ -1318,10 +1319,10 @@ std::vector<struct option> options = {
     {"self-ip",                   required_argument, 0, 's'},
     {"self-port",                 required_argument, 0, 'e'},
     {"timeout",                   required_argument, 0, 'o'},
-    {"machine",                   optional_argument, 0, 'm'},
-    {"config-json",               optional_argument, 0, 'c'},
-    {"userid",                    optional_argument, 0, 'u'},
-    {"password",                  optional_argument, 0, 'd'}
+    {"machine",                   required_argument, 0, 'm'},
+    {"config-json",               required_argument, 0, 'c'},
+    {"userid",                    required_argument, 0, 'u'},
+    {"password",                  required_argument, 0, 'd'}
 };
 
 /*
