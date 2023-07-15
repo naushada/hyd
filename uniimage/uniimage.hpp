@@ -192,7 +192,7 @@ class noor::Tls {
          * @brief Construct a new Tls object
          * 
          */
-        Tls(): m_method(SSLv23_client_method()), m_ssl_ctx(SSL_CTX_new(m_method), SSL_CTX_free), m_ssl(SSL_new(m_ssl_ctx.get()), SSL_free) {
+        Tls(): m_method(nullptr), m_ssl_ctx(nullptr, SSL_CTX_free), m_ssl(nullptr, SSL_free) {
 
             OpenSSL_add_all_algorithms();
             SSL_load_error_strings();
@@ -227,6 +227,14 @@ class noor::Tls {
          * @return std::int32_t 
          */
         std::int32_t init(std::int32_t fd) {
+            m_method = SSLv23_client_method();
+
+            m_ssl_ctx = std::unique_ptr<SSL_CTX, decltype(&SSL_CTX_free)>(nullptr, SSL_CTX_free);
+            m_ssl_ctx.reset(SSL_CTX_new(m_method));
+
+            m_ssl = std::unique_ptr<SSL, decltype(&SSL_free)>(nullptr, SSL_free);
+            m_ssl.reset(SSL_new(m_ssl_ctx.get()));
+
             std::int32_t rc = SSL_set_fd(m_ssl.get(), fd);
             
             return(rc);
@@ -234,6 +242,14 @@ class noor::Tls {
 
         std::int32_t init(const std::string &cert="../cert/cert.pem", const std::string& pkey="../cert/pkey.pem") {
             std::int32_t ret = -1;
+            m_method = SSLv23_server_method();
+
+            m_ssl_ctx = std::unique_ptr<SSL_CTX, decltype(&SSL_CTX_free)>(nullptr, SSL_CTX_free);
+            m_ssl_ctx.reset(SSL_CTX_new(m_method));
+
+            m_ssl = std::unique_ptr<SSL, decltype(&SSL_free)>(nullptr, SSL_free);
+            m_ssl.reset(SSL_new(m_ssl_ctx.get()));
+
             //For tls server
             if(cert.length() && pkey.length()) {
 
