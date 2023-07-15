@@ -205,6 +205,7 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                                 std::stringstream data("");
                                 data.write (reinterpret_cast <char *>(&payload_len), sizeof(std::int32_t));
                                 data << getResponseCache().begin()->second;
+                                std::cout << "line: " << __LINE__ << " sending to Server over TLS : " << data.str() << std::endl;
                                 auto len = svc->tls().write(data.str());
                                 if(len > 0) {
                                     std::cout << "line: " << __LINE__ << " sent to Server over TLS len: " << len << std::endl;
@@ -462,7 +463,7 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                         if(newFd > 0) {
                             std::uint16_t PORT = ntohs(addr.sin_port);
                             std::string IP(inet_ntoa(addr.sin_addr));
-                            std::cout<< "line: " << __LINE__ << " new client for TCP server IP: " << IP <<" PORT: " << PORT << " FD: " << newFd << std::endl;
+                            std::cout<< "line: " << __LINE__ << " new client for TLS server IP: " << IP <<" PORT: " << PORT << " FD: " << newFd << std::endl;
 
                             //making socket non-blocking
                             auto flags = ::fcntl(newFd, F_GETFL);
@@ -548,6 +549,7 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                                 len = svc->tls().peek(request);
 
                                 std::cout << __TIMESTAMP__ << " line: " << __LINE__ << " len: " << len << std::endl;
+                                std::cout << "line: " << __LINE__ << " while doing peek errno: "<< std::strerror(errno) << std::endl;
                                 if(len > 0 && len > 4) {
                                     std::istringstream istrstr;
                                     istrstr.rdbuf()->pubsetbuf(request.data(), len);
