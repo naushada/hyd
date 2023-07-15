@@ -540,49 +540,68 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                             std::string request("");
                             auto svc = GetService(serviceType, Fd);
                             if(svc == nullptr) break;
-                            std::string out;
-                            auto len = svc->tls().read(out, 4);
-                            std::cout << __TIMESTAMP__ << " line: " << __LINE__ << " len: " << len << std::endl;
-                            if(len > 0 && len == 4) {
-                                std::uint32_t payload_len = 0;
-                                std::istringstream istrstr;
-                                istrstr.rdbuf()->pubsetbuf(out.data(), len);
-                                istrstr.read(reinterpret_cast<char *>(&payload_len), sizeof(payload_len));
-                                std::int32_t offset = 0;
-                                payload_len = ntohl(payload_len);
-                                /////////
-                                out.clear();
-                                len = svc->tls().read(out, payload_len);
-                                if(len < 0) {
-                                    //Read from TLS server is failed.
-                                    break;
-                                }
-                                std::cout << __TIMESTAMP__ << " line: " << __LINE__ << " received: " << out << std::endl;
-                                //Feed it over REST interface to Device. 
-                                svc = GetService(noor::ServiceType::Tls_Tcp_Rest_Client_For_Gateway_Service_Async);
-                                if(svc == nullptr) {
-                                    //Rest Client Connection is closed, Establish it now for this Request.
-                                    json jobj = json::object();
-                                    jobj["login"] = get_config()["userid"];
-                                    jobj["password"] = get_config()["password"];
 
-                                    auto req = svc->restC().getToken(jobj.dump());
-                                    std::cout << "line: " << __LINE__ << " request sent: " << std::endl << req << std::endl;
-                                    auto len = svc->tls().write(req);
-                                    (void)len;
-                                    auto future = svc->restC().promise().get_future();
-                                    //fallthrough
-                                }
-                                len = svc->tls().write(out);
-                                if(len > 0) {
-                                    std::cout << __TIMESTAMP__ << " line: " << __LINE__ << " Request feed to device over REST interface " << std::endl;
+                            std::string out("");
+                            std::int32_t payload_len = 0;
+                            std::int32_t len = -1;
+
+                            do {
+                                len = svc->tls().peek(out);
+                                std::cout << __TIMESTAMP__ << " line: " << __LINE__ << " len: " << len << std::endl;
+                                if(len > 0 && len > 4) {
+                                    std::istringstream istrstr;
+                                    istrstr.rdbuf()->pubsetbuf(out.data(), len);
+                                    istrstr.read(reinterpret_cast<char *>(&payload_len), sizeof(payload_len));
+                                    std::int32_t offset = 0;
+                                    payload_len = ntohl(payload_len);
+                                } else if(!len) {
+                                    //connection is closed.
                                     break;
                                 }
-                            } else if(!len) {
-                                //Client is closed
+
+                            }while(len != -1 && len != (payload_len + 4));
+                            /////////
+                            if(!len) {
+                                std::cout << "line: " << __LINE__ << " closing the client connection " << std::endl;
                                 DeleteService(serviceType, Fd);
                                 DeRegisterFromEPoll(Fd);
+                                break;
                             }
+                            out.clear();
+                            len = svc->tls().read(out, (payload_len+4));
+                            if(len < 0) {
+                                //Read from TLS server is failed.
+                                break;
+                            } else if(!len) {
+                                std::cout << "line: " << __LINE__ << " closing the client connection " << std::endl;
+                                DeleteService(serviceType, Fd);
+                                DeRegisterFromEPoll(Fd);
+                                break;
+                            }
+                            std::cout << __TIMESTAMP__ << " line: " << __LINE__ << " received: " << out << std::endl;
+                            //Feed it over REST interface to Device. 
+                            svc = GetService(noor::ServiceType::Tls_Tcp_Rest_Client_For_Gateway_Service_Async);
+                            if(svc == nullptr) {
+                                //Rest Client Connection is closed, Establish it now for this Request.
+                                json jobj = json::object();
+                                jobj["login"] = get_config()["userid"];
+                                jobj["password"] = get_config()["password"];
+
+                                auto req = svc->restC().getToken(jobj.dump());
+                                std::cout << "line: " << __LINE__ << " request sent: " << std::endl << req << std::endl;
+                                auto len = svc->tls().write(req);
+                                (void)len;
+                                std::cout << __TIMESTAMP__ << " line: " << __LINE__ << " going to wait on future " << std::endl;
+                                auto future = svc->restC().promise().get_future();
+                                //fallthrough
+                            }
+                            len = svc->tls().write(out);
+
+                            if(len > 0) {
+                                std::cout << __TIMESTAMP__ << " line: " << __LINE__ << " Request feed to device over REST interface " << std::endl;
+                                break;
+                            }
+                            
                         }while(0);
                     }
                     break;
