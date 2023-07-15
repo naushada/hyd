@@ -557,6 +557,7 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                                     //Read from TLS server is failed.
                                     break;
                                 }
+                                std::cout << __TIMESTAMP__ << " line: " << __LINE__ << " received: " << out << std::endl;
                                 //Feed it over REST interface to Device. 
                                 svc = GetService(noor::ServiceType::Tls_Tcp_Rest_Client_For_Gateway_Service_Async);
                                 if(svc == nullptr) {
