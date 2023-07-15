@@ -193,13 +193,14 @@ class noor::Tls {
          * 
          */
         Tls(): m_method(nullptr), m_ssl_ctx(nullptr, SSL_CTX_free), m_ssl(nullptr, SSL_free) {
-
+#if 0
             OpenSSL_add_all_algorithms();
             SSL_load_error_strings();
             /* ---------------------------------------------------------- *
              * Disabling SSLv2 will leave v3 and TSLv1 for negotiation    *
              * ---------------------------------------------------------- */
             SSL_CTX_set_options(m_ssl_ctx.get(), SSL_OP_NO_SSLv2);
+#endif
         }
 
         Tls(bool role): m_method(SSLv23_server_method()), 
@@ -235,6 +236,13 @@ class noor::Tls {
             m_ssl = std::unique_ptr<SSL, decltype(&SSL_free)>(nullptr, SSL_free);
             m_ssl.reset(SSL_new(m_ssl_ctx.get()));
 
+            OpenSSL_add_all_algorithms();
+            SSL_load_error_strings();
+            /* ---------------------------------------------------------- *
+             * Disabling SSLv2 will leave v3 and TSLv1 for negotiation    *
+             * ---------------------------------------------------------- */
+            SSL_CTX_set_options(m_ssl_ctx.get(), SSL_OP_NO_SSLv2);
+
             std::int32_t rc = SSL_set_fd(m_ssl.get(), fd);
             
             return(rc);
@@ -249,6 +257,13 @@ class noor::Tls {
 
             m_ssl = std::unique_ptr<SSL, decltype(&SSL_free)>(nullptr, SSL_free);
             m_ssl.reset(SSL_new(m_ssl_ctx.get()));
+
+            OpenSSL_add_all_algorithms();
+            SSL_load_error_strings();
+            /* ---------------------------------------------------------- *
+             * Disabling SSLv2 will leave v3 and TSLv1 for negotiation    *
+             * ---------------------------------------------------------- */
+            SSL_CTX_set_options(m_ssl_ctx.get(), SSL_OP_NO_SSLv2);
 
             //For tls server
             if(cert.length() && pkey.length()) {
