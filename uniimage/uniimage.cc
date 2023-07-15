@@ -566,7 +566,13 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                             } else {
                                 len = svc->tls().read(request, (payload_len + 4));
                                 if(len > 0) {
-                                    json jobj = json::parse(request);
+                                    std::istringstream istrstr;
+                                    istrstr.rdbuf()->pubsetbuf(request.data(), len);
+                                    istrstr.read(reinterpret_cast<char *>(&payload_len), sizeof(payload_len));
+                                    std::string payload("");
+                                    istrstr.read(payload.data(), payload_len);
+
+                                    json jobj = json::parse(payload);
                                     auto srNumber = jobj["serialNumber"].get<std::string>();
                                     //learn the serial number now.
                                     svc->serialNumber(srNumber);
@@ -851,10 +857,10 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                             auto svc = GetService(serviceType);
                             if(svc == nullptr) break;
 
-                            auto result = svc->tcp_rx(Fd, request);
+                            auto result = svc->tls().peek(request);
 
-                            if(!result) {
-                                std::cout << "line: " << __LINE__ << " closing the connection for Service: " << serviceType << std::endl;
+                            if(!result || result < 0) {
+                                std::cout << "line: " << __LINE__ << " closing the connection for Service: " << serviceType << " result: " << result << std::endl;
                                 auto IP = svc->ip();
                                 auto PORT = svc->port();
                                 DeleteService(serviceType);
@@ -862,7 +868,28 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                                 CreateServiceAndRegisterToEPoll(serviceType, IP, PORT,true);
                                 break;
                             }
-                            std::cout << "line: " << __LINE__ << " serviceType: " << serviceType << " received from DMS: " << request << std::endl;
+                            std::int32_t payload_len = -1;
+                            std::istringstream istrstr;
+                            istrstr.rdbuf()->pubsetbuf(request.data(), result);
+                            istrstr.read(reinterpret_cast<char *>(&payload_len), sizeof(payload_len));
+                            payload_len = ntohl(payload_len);
+
+                            result = svc->tls().read(request, payload_len + 4);
+                            if(!result || result < 0) {
+                                auto IP = svc->ip();
+                                auto PORT = svc->port();
+                                DeleteService(serviceType);
+                                DeRegisterFromEPoll(Fd);
+                                CreateServiceAndRegisterToEPoll(serviceType, IP, PORT,true);
+                                break;
+                            }
+
+                            istrstr.rdbuf()->pubsetbuf(request.data(), result);
+                            istrstr.read(reinterpret_cast<char *>(&payload_len), sizeof(payload_len));
+                            std::string payload("");
+                            istrstr.read(payload.data(), payload_len);
+
+                            std::cout << "line: " << __LINE__ << " serviceType: " << serviceType << " received from DMS: " << payload << std::endl;
                             {
                                 //Pass on over TLS to Device
                                 auto svc = GetService(noor::ServiceType::Tls_Tcp_Rest_Client_For_Gateway_Service_Sync);
