@@ -319,6 +319,7 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
 
                             if(!getResponseCache().empty()) {
                                 std::int32_t req_len = getResponseCache().begin()->second.length();
+                                //Encode First Payload len
                                 auto payload_len = htonl(req_len);
                                 std::stringstream data("");
                                 data.write (reinterpret_cast <char *>(&payload_len), sizeof(std::int32_t));
@@ -329,6 +330,7 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                                     std::cout << "line: " << __LINE__ << " sent to Device Mgmt Server over TLS len: " << len << std::endl;
                                     break;
                                 }
+                                std::cout << "line: " << __LINE__ << " Failed to sent to Device Mgmt Server over TLS len: " << len << std::endl;
                             }
                         } while(0);
                     }
@@ -544,37 +546,40 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                             std::string request("");
                             std::int32_t payload_len = 0;
                             std::int32_t len = -1;
+                            // Read first 4 Bytes Header which is of length of payload
+                            len = svc->tls().read(request, 4);
 
-                            do {
-                                len = svc->tls().peek(request);
+                            std::cout << __TIMESTAMP__ << " line: " << __LINE__ << " len: " << len << std::endl;
+                            std::cout << "line: " << __LINE__ << " while doing peek errno: "<< std::strerror(errno) << std::endl;
 
-                                std::cout << __TIMESTAMP__ << " line: " << __LINE__ << " len: " << len << std::endl;
-                                std::cout << "line: " << __LINE__ << " while doing peek errno: "<< std::strerror(errno) << std::endl;
-                                if(len > 0 && len > 4) {
-                                    std::istringstream istrstr;
-                                    istrstr.rdbuf()->pubsetbuf(request.data(), len);
-                                    istrstr.read(reinterpret_cast<char *>(&payload_len), sizeof(payload_len));
-                                    std::int32_t offset = 0;
-                                    payload_len = ntohl(payload_len);
-                                } else if(!len) {
-                                    //connection is closed.
-                                    break;
-                                }
+                            if(len > 0 && len == 4) {
+                                std::istringstream istrstr;
+                                istrstr.rdbuf()->pubsetbuf(request.data(), len);
+                                istrstr.read(reinterpret_cast<char *>(&payload_len), sizeof(payload_len));
+                                payload_len = ntohl(payload_len);
+                                std::cout << __TIMESTAMP__ << " line: " << __LINE__ << " payload_len: " << payload_len << std::endl;
+                            } else if(!len) {
+                                //connection is closed.
+                                std::cout << "line: " << __LINE__ << " closing the client connection for serviceType: " << serviceType << " len: " << len << std::endl;
+                                DeleteService(serviceType, Fd);
+                                DeRegisterFromEPoll(Fd);
+                                break;
+                            }
 
-                            }while(len != -1 && len != (payload_len + 4));
-
-                            if(!len || len < 0) {
-                                //fall through...
+                            if(!payload_len || payload_len < 0) {
+                                std::cout << "line: " << __LINE__ << " closing the client connection for serviceType: " << serviceType << " len: " << len << std::endl;
+                                DeleteService(serviceType, Fd);
+                                DeRegisterFromEPoll(Fd);
+                                break;
                             } else {
-                                len = svc->tls().read(request, (payload_len + 4));
-                                if(len > 0) {
-                                    std::istringstream istrstr;
-                                    istrstr.rdbuf()->pubsetbuf(request.data(), len);
-                                    istrstr.read(reinterpret_cast<char *>(&payload_len), sizeof(payload_len));
-                                    std::string payload("");
-                                    istrstr.read(payload.data(), payload_len);
-
-                                    json jobj = json::parse(payload);
+                                len = svc->tls().read(request, payload_len);
+                                if(len < 0 || !len) {
+                                    std::cout << "line: " << __LINE__ << " closing the client connection for serviceType: " << serviceType << " len: " << len << std::endl;
+                                    DeleteService(serviceType, Fd);
+                                    DeRegisterFromEPoll(Fd);
+                                    break;
+                                } else if(len > 0) {
+                                    json jobj = json::parse(request);
                                     auto srNumber = jobj["serialNumber"].get<std::string>();
                                     //learn the serial number now.
                                     svc->serialNumber(srNumber);
@@ -582,10 +587,6 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                                     std::cout << "line: " << __LINE__ << " serialNumber: " << srNumber << " received from device over TLS : " << request << std::endl;
                                     break;
                                 }
-
-                                std::cout << "line: " << __LINE__ << " closing the client connection for serviceType: " << serviceType << " len: " << len << std::endl;
-                                DeleteService(serviceType, Fd);
-                                DeRegisterFromEPoll(Fd);
                             }
                         }while(0);
                     }
@@ -854,12 +855,12 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                     case noor::ServiceType::Tls_Tcp_DeviceMgmtServer_Client_Gateway_Service_Async:
                     {
                         do {
-                            //Data is availabe for read. --- tcp_rx()
+                            //Data is availabe for read. --- tls read()
                             std::string request("");
                             auto svc = GetService(serviceType);
                             if(svc == nullptr) break;
 
-                            auto result = svc->tls().peek(request);
+                            auto result = svc->tls().read(request, 4);
 
                             if(!result || result < 0) {
                                 std::cout << "line: " << __LINE__ << " closing the connection for Service: " << serviceType << " result: " << result << std::endl;
@@ -870,34 +871,30 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                                 CreateServiceAndRegisterToEPoll(serviceType, IP, PORT,true);
                                 break;
                             }
+
                             std::int32_t payload_len = -1;
                             std::istringstream istrstr;
                             istrstr.rdbuf()->pubsetbuf(request.data(), result);
                             istrstr.read(reinterpret_cast<char *>(&payload_len), sizeof(payload_len));
                             payload_len = ntohl(payload_len);
-
-                            result = svc->tls().read(request, payload_len + 4);
-                            if(!result || result < 0) {
-                                auto IP = svc->ip();
-                                auto PORT = svc->port();
-                                DeleteService(serviceType);
-                                DeRegisterFromEPoll(Fd);
-                                CreateServiceAndRegisterToEPoll(serviceType, IP, PORT,true);
-                                break;
-                            }
-
-                            istrstr.rdbuf()->pubsetbuf(request.data(), result);
-                            istrstr.read(reinterpret_cast<char *>(&payload_len), sizeof(payload_len));
-                            std::string payload("");
-                            istrstr.read(payload.data(), payload_len);
-
-                            std::cout << "line: " << __LINE__ << " serviceType: " << serviceType << " received from DMS: " << payload << std::endl;
-                            {
-                                //Pass on over TLS to Device
-                                auto svc = GetService(noor::ServiceType::Tls_Tcp_Rest_Client_For_Gateway_Service_Sync);
-                                if(svc == nullptr) break;
-
-                                svc->tls().write(request);
+                            std::cout << __TIMESTAMP__ << " line: " << __LINE__ << " payload_len: " << payload_len << std::endl;
+                            if(payload_len > 0) {
+                                result = svc->tls().read(request, payload_len);
+                                if(!result || result < 0) {
+                                    auto IP = svc->ip();
+                                    auto PORT = svc->port();
+                                    DeleteService(serviceType);
+                                    DeRegisterFromEPoll(Fd);
+                                    CreateServiceAndRegisterToEPoll(serviceType, IP, PORT,true);
+                                    break;
+                                }
+                                std::cout << "line: " << __LINE__ << " serviceType: " << serviceType << " received from DMS: " << payload_len << std::endl;
+                                {
+                                    //Pass on over TLS to Device
+                                    auto svc = GetService(noor::ServiceType::Tls_Tcp_Rest_Client_For_Gateway_Service_Sync);
+                                    if(svc == nullptr) break;
+                                    svc->tls().write(request);
+                                }
                             }
                             
                             break;
