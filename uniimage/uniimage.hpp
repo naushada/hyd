@@ -301,6 +301,7 @@ class noor::Tls {
             rc = SSL_set_fd(m_ssl.get(), fd);
             rc = SSL_accept(m_ssl.get());
             std::cout << __TIMESTAMP__ << " line: " << __LINE__ << " SSL_accept return: " << rc << std::endl;
+            ERR_print_errors_fp(stderr);
             return(rc);
         }
 
