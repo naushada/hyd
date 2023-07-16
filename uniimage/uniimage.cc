@@ -466,14 +466,13 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                             std::uint16_t PORT = ntohs(addr.sin_port);
                             std::string IP(inet_ntoa(addr.sin_addr));
                             std::cout<< "line: " << __LINE__ << " new client for TLS server IP: " << IP <<" PORT: " << PORT << " FD: " << newFd << std::endl;
-
-                        #if 0
+                        
                             //making socket non-blocking
                             auto flags = ::fcntl(newFd, F_GETFL);
                             if(::fcntl(newFd, F_SETFL, flags | O_NONBLOCK) < 0) {
                                 std::cout << __TIMESTAMP__ << ": line: " << __LINE__ << " making socker non-blocking for fd: " << newFd << " failed" << std::endl;
                             }
-                        #endif
+
                             m_services.insert(std::make_pair(noor::ServiceType::Tls_Tcp_DeviceMgmtServer_Client_Gateway_Connected_Service ,
                                               std::make_unique<TcpClient>(newFd, IP, PORT)));
                             auto svc = GetService(noor::ServiceType::Tls_Tcp_DeviceMgmtServer_Client_Gateway_Connected_Service, newFd);
@@ -483,6 +482,7 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                             svc->tls().init(cert, pkey);
                             if(svc->tls().server(newFd) < 0) {
                                 ERR_print_errors_fp(stderr);
+                                break;
                             }
 
                             RegisterToEPoll(noor::ServiceType::Tls_Tcp_DeviceMgmtServer_Client_Gateway_Connected_Service, newFd);
