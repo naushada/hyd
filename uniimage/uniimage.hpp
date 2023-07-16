@@ -228,7 +228,7 @@ class noor::Tls {
          * @return std::int32_t 
          */
         std::int32_t init(std::int32_t fd) {
-            m_method = SSLv23_client_method();
+            m_method = TLSv1_2_client_method();
 
             m_ssl_ctx = std::unique_ptr<SSL_CTX, decltype(&SSL_CTX_free)>(nullptr, SSL_CTX_free);
             m_ssl_ctx.reset(SSL_CTX_new(m_method));
