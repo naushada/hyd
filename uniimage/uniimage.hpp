@@ -251,19 +251,63 @@ class noor::Tls {
         std::int32_t init(const std::string &cert="../cert/cert.pem", const std::string& pkey="../cert/pkey.pem") {
             std::int32_t ret = -1;
             //m_method = SSLv23_server_method();
-            m_method = TLSv1_2_server_method();
+            m_method = TLS_method();
             m_ssl_ctx = std::unique_ptr<SSL_CTX, decltype(&SSL_CTX_free)>(nullptr, SSL_CTX_free);
             m_ssl_ctx.reset(SSL_CTX_new(m_method));
 
             m_ssl = std::unique_ptr<SSL, decltype(&SSL_free)>(nullptr, SSL_free);
             m_ssl.reset(SSL_new(m_ssl_ctx.get()));
 
-            OpenSSL_add_all_algorithms();
-            SSL_load_error_strings();
-            /* ---------------------------------------------------------- *
-             * Disabling SSLv2 will leave v3 and TSLv1 for negotiation    *
-             * ---------------------------------------------------------- */
-            SSL_CTX_set_options(m_ssl_ctx.get(), SSL_OP_NO_SSLv2);
+            SSL_CTX_set_options(m_ssl_ctx.get (), SSL_OP_ALL);
+            // disallow compression.
+            SSL_CTX_set_options(m_ssl_ctx.get (), SSL_OP_NO_COMPRESSION);
+            // disallow usage of SSLv2, SSLv3, TLSv1 and TLSv1.1 which are considered insecure.
+            SSL_CTX_set_options(m_ssl_ctx.get (), SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3 | SSL_OP_NO_TLSv1 | SSL_OP_NO_TLSv1_1);
+
+            // choose the cipher according to the server's preferences.
+            SSL_CTX_set_options(m_ssl_ctx.get (), SSL_OP_CIPHER_SERVER_PREFERENCE);
+
+            // setup write mode.
+            SSL_CTX_set_mode(m_ssl_ctx.get (), SSL_MODE_ENABLE_PARTIAL_WRITE | SSL_MODE_ACCEPT_MOVING_WRITE_BUFFER);
+
+            // automatically renegotiates.
+            SSL_CTX_set_mode(m_ssl_ctx.get (), SSL_MODE_AUTO_RETRY);
+
+            // enable SSL session caching.
+            //SSL_CTX_set_session_id_context(sslContext.get (), reinterpret_cast <const unsigned char *> (&sessionId), sizeof (sessionId));
+
+            // no verification by default.
+            SSL_CTX_set_verify(m_ssl_ctx.get (), SSL_VERIFY_NONE, nullptr);
+
+            // set default TLSv1.2 and below cipher suites.
+            SSL_CTX_set_cipher_list(m_ssl_ctx.get (), "EECDH+ECDSA+AESGCM:EECDH+aRSA+AESGCM:EECDH+ECDSA+CHACHA20:EECDH+aRSA+CHACHA20:EECDH+ECDSA+AESCCM:"
+                                          "EDH+DSS+AESGCM:EDH+aRSA+CHACHA20:EDH+aRSA+AESCCM:-AESCCM8:EECDH+ECDSA+AESCCM8:EDH+aRSA+AESCCM8");
+
+            //  set default TLSv1.3 cipher suites.
+            SSL_CTX_set_ciphersuites(m_ssl_ctx.get (), "TLS_AES_256_GCM_SHA384:TLS_AES_128_GCM_SHA256:TLS_CHACHA20_POLY1305_SHA256:"
+                                          "TLS_AES_128_CCM_SHA256:TLS_AES_128_CCM_8_SHA256");
+
+            // disallow client-side renegotiation.
+            SSL_CTX_set_options(m_ssl_ctx.get (), SSL_OP_NO_RENEGOTIATION);
+
+            // Set Diffie-Hellman key.
+            if(SSL_CTX_set_dh_auto(m_ssl_ctx.get (), 1) != 1) {
+                throw std::runtime_error ("SSL_CTX_set_dh_auto() failed");
+            }
+
+            // set groups/curves
+            int curves [] = {
+                NID_X9_62_prime256v1
+            };
+            if(SSL_CTX_set1_curves(m_ssl_ctx.get (), curves, sizeof(curves) / sizeof (curves [0])) != 1) {
+                throw std::runtime_error ("SSL_CTX_set1_curves() failed");
+            }
+
+            // OpenSSL 3.0 has curve selection set to 'auto' by default
+            // SSL_CTX_set_ecdh_auto (sslContext.get (), 1);
+
+            // minimum protocol version TLS 1.2
+            SSL_CTX_set_min_proto_version(m_ssl_ctx.get (), TLS1_2_VERSION);
 
             //For tls server
             if(cert.length() && pkey.length()) {
@@ -277,7 +321,13 @@ class noor::Tls {
                     ERR_print_errors_fp(stderr);
                     return(ret);
                 }
+                if(!SSL_CTX_check_private_key(m_ssl_ctx.get())) {
+                    perror("private key check");
+                    exit(1);
+                }
             }
+            
+            SSL_set_accept_state(m_ssl.get());
 
             return(ret);
         }
@@ -299,6 +349,9 @@ class noor::Tls {
         std::int32_t server(std::int32_t fd) {
             std::int32_t rc = -1;
             rc = SSL_set_fd(m_ssl.get(), fd);
+            // prepare the object to work in server mode.
+            SSL_set_accept_state (m_ssl.get ());
+            
             rc = SSL_accept(m_ssl.get());
             std::cout << __TIMESTAMP__ << " line: " << __LINE__ << " SSL_accept return: " << rc << std::endl;
             ERR_print_errors_fp(stderr);
