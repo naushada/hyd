@@ -258,6 +258,7 @@ class noor::Tls {
             m_ssl = std::unique_ptr<SSL, decltype(&SSL_free)>(nullptr, SSL_free);
             m_ssl.reset(SSL_new(m_ssl_ctx.get()));
 
+#if 0
             SSL_CTX_set_options(m_ssl_ctx.get (), SSL_OP_ALL);
             // disallow compression.
             SSL_CTX_set_options(m_ssl_ctx.get (), SSL_OP_NO_COMPRESSION);
@@ -308,7 +309,8 @@ class noor::Tls {
 
             // minimum protocol version TLS 1.2
             SSL_CTX_set_min_proto_version(m_ssl_ctx.get (), TLS1_2_VERSION);
-
+#endif
+            OpenSSL_add_all_algorithms();
             //For tls server
             if(cert.length() && pkey.length()) {
 
