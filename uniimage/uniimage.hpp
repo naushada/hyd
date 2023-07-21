@@ -546,7 +546,7 @@ class noor::Service {
             m_connected_clients.clear();
         }
 
-        virtual ~Service() {}
+        virtual ~Service() {close(m_handle);}
         std::int32_t tcp_client(const std::string& IP, std::uint16_t PORT, std::int32_t& channel, bool isAsync=false);
         std::int32_t udp_client(const std::string& IP, std::uint16_t PORT);
         std::int32_t uds_client(const std::string& PATH="/var/run/treemgr/treemgr.sock");
