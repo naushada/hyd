@@ -483,7 +483,7 @@ std::int32_t noor::Uniimage::start(std::int32_t toInMilliSeconds) {
                             if(svc->tls().server(newFd) < 0) {
                                 std::cout << __TIMESTAMP__ << " line: " << __LINE__ << " SSL_accepts failed" << std::endl;
                                 ERR_print_errors_fp(stderr);
-                                DeleteService(serviceType, newFd);
+                                DeleteService(noor::ServiceType::Tls_Tcp_DeviceMgmtServer_Client_Gateway_Connected_Service, newFd);
                                 break;
                             }
 
