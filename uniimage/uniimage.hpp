@@ -312,6 +312,14 @@ class noor::Tls {
             SSL_CTX_set_min_proto_version(m_ssl_ctx.get (), TLS1_2_VERSION);
 #endif
             OpenSSL_add_all_algorithms();
+            // set default TLSv1.2 and below cipher suites.
+            SSL_CTX_set_cipher_list(m_ssl_ctx.get (), "EECDH+ECDSA+AESGCM:EECDH+aRSA+AESGCM:EECDH+ECDSA+CHACHA20:EECDH+aRSA+CHACHA20:EECDH+ECDSA+AESCCM:"
+                                          "EDH+DSS+AESGCM:EDH+aRSA+CHACHA20:EDH+aRSA+AESCCM:-AESCCM8:EECDH+ECDSA+AESCCM8:EDH+aRSA+AESCCM8");
+
+            //  set default TLSv1.3 cipher suites.
+            SSL_CTX_set_ciphersuites(m_ssl_ctx.get (), "TLS_AES_256_GCM_SHA384:TLS_AES_128_GCM_SHA256:TLS_CHACHA20_POLY1305_SHA256:"
+                                          "TLS_AES_128_CCM_SHA256:TLS_AES_128_CCM_8_SHA256");
+                                          
             //For tls server
             if(cert.length() && pkey.length()) {
 
