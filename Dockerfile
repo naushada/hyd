@@ -1,5 +1,5 @@
 FROM alpine:latest
-RUN apk add git g++ make cmake unzip libtool curl-dev automake
+RUN apk add --no-cache git g++ make cmake unzip libtool curl-dev automake
 #RUN apk update && apk add --update alpine-sdk && apk add --no-cache make build-base && apk add cmake && apk add git && apk add g++
 
 WORKDIR /root
